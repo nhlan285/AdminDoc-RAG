@@ -1,0 +1,44 @@
+{
+  "documents": [
+    {
+      "id": "ND30-2020-RAW",
+      "title": "Nghị định 30/2020/NĐ-CP về công tác văn thư",
+      "doc_type": "Quy định thể thức",
+      "source_url": "https://congbao.chinhphu.vn/thuoc-tinh-van-ban-so-30-2020-nd-cp-30858?cbid=30246",
+      "source_name": "Công báo điện tử Chính phủ",
+      "file": "congbao__30-2020-nd-cp__cong-tac-van-thu.pdf",
+      "status": "planned",
+      "notes": "Tải PDF/DOC gốc rồi trích nội dung liên quan thể thức văn bản."
+    },
+    {
+      "id": "QD28-2018-RAW",
+      "title": "Quyết định 28/2018/QĐ-TTg về gửi, nhận văn bản điện tử",
+      "doc_type": "Quy định văn bản điện tử",
+      "source_url": "https://congbao.chinhphu.vn/thuoc-tinh-van-ban-so-28-2018-qd-ttg-26965?cbid=23211",
+      "source_name": "Công báo điện tử Chính phủ",
+      "file": "congbao__28-2018-qd-ttg__gui-nhan-van-ban-dien-tu.pdf",
+      "status": "planned",
+      "notes": "Dùng làm nguồn ngữ cảnh về văn bản điện tử."
+    },
+    {
+      "id": "VPCP-7017-RAW",
+      "title": "Công văn 7017/VPCP-HC về gửi file điện tử hồ sơ trình Chính phủ, Thủ tướng Chính phủ",
+      "doc_type": "Công văn",
+      "source_url": "https://vanban.chinhphu.vn/default.aspx?docid=163703&pageid=27160",
+      "source_name": "Cổng văn bản Chính phủ",
+      "file": "vanban-chinhphu__7017-vpcp-hc__gui-file-dien-tu-ho-so.txt",
+      "status": "planned",
+      "notes": "Có thể copy phần toàn văn hoặc tải tài liệu đính kèm nếu có."
+    },
+    {
+      "id": "VPCP-7393-RAW",
+      "title": "Công văn 7393/VPCP-TCCV về báo cáo cải cách thủ tục hành chính",
+      "doc_type": "Công văn",
+      "source_url": "https://chinhphu.vn/default.aspx?docid=169576&pageid=27160",
+      "source_name": "Cổng Thông tin điện tử Chính phủ",
+      "file": "chinhphu__7393-vpcp-tccv__bao-cao-cai-cach-tthc.pdf",
+      "status": "planned",
+      "notes": "Dùng làm mẫu công văn thực tế."
+    }
+  ]
+}

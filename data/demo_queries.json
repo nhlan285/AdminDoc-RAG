@@ -1,0 +1,28 @@
+{
+  "demo_queries": [
+    {
+      "id": "DEMO-CV-01",
+      "doc_type": "Công văn",
+      "query": "soạn công văn đề nghị cung cấp số liệu chuyển đổi số",
+      "expected_demo_point": "Có nguồn truy xuất, citation và file DOCX để tải."
+    },
+    {
+      "id": "DEMO-TB-01",
+      "doc_type": "Thông báo",
+      "query": "thông báo tổ chức tập huấn an toàn thông tin",
+      "expected_demo_point": "Bố cục thông báo khác công văn và có checklist chất lượng."
+    },
+    {
+      "id": "DEMO-TT-01",
+      "doc_type": "Tờ trình",
+      "query": "tờ trình phê duyệt kế hoạch triển khai phần mềm nội bộ",
+      "expected_demo_point": "Có phần sự cần thiết, nội dung đề xuất và kiến nghị."
+    },
+    {
+      "id": "DEMO-NOSOURCE-01",
+      "doc_type": "Công văn",
+      "query": "soạn công văn về ký số tự động liên thông quốc gia",
+      "expected_demo_point": "App cảnh báo chưa đủ nguồn kiểm chứng và đánh dấu rủi ro cao."
+    }
+  ]
+}

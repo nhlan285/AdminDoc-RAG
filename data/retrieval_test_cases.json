@@ -1,0 +1,37 @@
+[
+  {
+    "id": "RET-001",
+    "query": "soạn công văn đề nghị cung cấp số liệu chuyển đổi số",
+    "doc_type": "Công văn",
+    "expected_parent_id": "CV-MAU-002",
+    "description": "Truy xuất đúng mẫu công văn cung cấp số liệu chuyển đổi số."
+  },
+  {
+    "id": "RET-002",
+    "query": "thông báo tổ chức tập huấn an toàn thông tin",
+    "doc_type": "Thông báo",
+    "expected_parent_id": "TB-MAU-002",
+    "description": "Truy xuất đúng mẫu thông báo tập huấn an toàn thông tin."
+  },
+  {
+    "id": "RET-003",
+    "query": "tờ trình phê duyệt kế hoạch triển khai phần mềm nội bộ",
+    "doc_type": "Tờ trình",
+    "expected_parent_id": "TT-MAU-002",
+    "description": "Truy xuất đúng mẫu tờ trình phê duyệt kế hoạch phần mềm nội bộ."
+  },
+  {
+    "id": "RET-004",
+    "query": "quyết định thành lập tổ triển khai dự án công nghệ thông tin",
+    "doc_type": "Quyết định hành chính đơn giản",
+    "expected_parent_id": "QD-MAU-002",
+    "description": "Truy xuất đúng mẫu quyết định thành lập tổ triển khai dự án."
+  },
+  {
+    "id": "RET-005",
+    "query": "cong van moi tham du hoi nghi so ket",
+    "doc_type": "Công văn",
+    "expected_parent_id": "CV-MAU-003",
+    "description": "Kiểm tra truy vấn không dấu vẫn tìm đúng công văn mời hội nghị sơ kết."
+  }
+]

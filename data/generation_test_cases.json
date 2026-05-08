@@ -1,0 +1,75 @@
+[
+  {
+    "id": "GEN-001",
+    "query": "soạn công văn đề nghị cung cấp số liệu chuyển đổi số",
+    "doc_type": "Công văn",
+    "expected_fragments": [
+      "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM",
+      "Kính gửi:",
+      "Nơi nhận:",
+      "Nguồn tham khảo"
+    ],
+    "forbidden_fragments": [
+      "CHƯA ĐỦ NGUỒN KIỂM CHỨNG"
+    ],
+    "description": "Công văn có bố cục cơ bản và nguồn tham khảo."
+  },
+  {
+    "id": "GEN-002",
+    "query": "thông báo tổ chức tập huấn an toàn thông tin",
+    "doc_type": "Thông báo",
+    "expected_fragments": [
+      "THÔNG BÁO",
+      "Nội dung thông báo",
+      "Tổ chức thực hiện",
+      "Nguồn tham khảo"
+    ],
+    "forbidden_fragments": [
+      "CHƯA ĐỦ NGUỒN KIỂM CHỨNG"
+    ],
+    "description": "Thông báo có tên loại và phần tổ chức thực hiện."
+  },
+  {
+    "id": "GEN-003",
+    "query": "tờ trình phê duyệt kế hoạch triển khai phần mềm nội bộ",
+    "doc_type": "Tờ trình",
+    "expected_fragments": [
+      "TỜ TRÌNH",
+      "Sự cần thiết",
+      "Nội dung đề xuất",
+      "Kiến nghị"
+    ],
+    "forbidden_fragments": [
+      "CHƯA ĐỦ NGUỒN KIỂM CHỨNG"
+    ],
+    "description": "Tờ trình có các phần sự cần thiết, đề xuất và kiến nghị."
+  },
+  {
+    "id": "GEN-004",
+    "query": "quyết định thành lập tổ triển khai dự án công nghệ thông tin",
+    "doc_type": "Quyết định hành chính đơn giản",
+    "expected_fragments": [
+      "QUYẾT ĐỊNH",
+      "Điều 1.",
+      "Điều 2.",
+      "Điều 3."
+    ],
+    "forbidden_fragments": [
+      "CHƯA ĐỦ NGUỒN KIỂM CHỨNG"
+    ],
+    "description": "Quyết định có cấu trúc điều khoản."
+  },
+  {
+    "id": "GEN-005",
+    "query": "soạn công văn về ký số tự động liên thông quốc gia",
+    "doc_type": "Công văn",
+    "expected_fragments": [
+      "CHƯA ĐỦ NGUỒN KIỂM CHỨNG",
+      "Chưa có nguồn phù hợp"
+    ],
+    "forbidden_fragments": [
+      "Căn cứ thông tin truy xuất"
+    ],
+    "description": "Ca thiếu nguồn phải cảnh báo thay vì sinh bản nháp hoàn chỉnh."
+  }
+]
