@@ -1,13 +1,9 @@
 from __future__ import annotations
-
 from dataclasses import dataclass
 from datetime import date
-
 from src.retriever import SearchResult
 
-
 MAX_CONTEXT_SOURCES = 3
-
 
 @dataclass(frozen=True)
 class Citation:
@@ -19,264 +15,256 @@ class Citation:
     score: float
     matched_terms: list[str]
 
-
 def build_draft(request: str, doc_type: str, search_results: list[SearchResult]) -> str:
     today = date.today()
     citations = _build_citations(search_results)
     topic = _build_topic(request, doc_type)
 
     if not citations:
-        return _build_no_source_draft(
-            request=request,
-            doc_type=doc_type,
-            topic=topic,
-            today=today,
-        )
+        return _build_no_source_draft(request=request, doc_type=doc_type, topic=topic, today=today)
 
-    if doc_type == "Công văn":
-        return _build_official_letter(request, topic, today, citations)
-    if doc_type == "Thông báo":
-        return _build_notice(request, topic, today, citations)
-    if doc_type == "Tờ trình":
-        return _build_proposal(request, topic, today, citations)
-    if doc_type == "Quyết định hành chính đơn giản":
-        return _build_decision(request, topic, today, citations)
+    # ==============================================================
+    # BỘ ĐỊNH TUYẾN (ROUTER): GOM 29 LOẠI VĂN BẢN VỀ 12 KHUÔN MẪU
+    # ==============================================================
+    
+    # 1. Nhóm Công văn & Thư tín hành chính
+    if doc_type in ["Công văn", "Bản ghi nhớ", "Bản thỏa thuận", "Thư công"]:
+        return _form_cong_van(topic, today, citations)
+        
+    # 2. Các mẫu đặc thù có format riêng lẻ
+    elif doc_type == "Công điện":
+        return _form_cong_dien(topic, today, citations)
+    elif doc_type == "Giấy mời":
+        return _form_giay_moi(topic, today, citations)
+    elif doc_type == "Giấy giới thiệu":
+        return _form_giay_gioi_thieu(topic, today, citations)
+    elif doc_type == "Giấy nghỉ phép":
+        return _form_giay_nghi_phep(topic, today, citations)
+    elif doc_type == "Biên bản":
+        return _form_bien_ban(topic, today, citations)
+        
+    # 3. Nhóm Quyết định & Nghị quyết
+    elif doc_type == "Nghị quyết (cá biệt)":
+        return _form_nghi_quyet(topic, today, citations)
+    elif doc_type == "Quyết định (trực tiếp)":
+        return _form_quyet_dinh_truc_tiep(topic, today, citations)
+    elif doc_type == "Quyết định (gián tiếp)":
+        return _form_quyet_dinh_gian_tiep(topic, today, citations)
+        
+    # 4. Nhóm "Văn bản có tên loại" (Gánh 18 loại văn bản có chung bố cục)
+    elif doc_type in [
+        "Chỉ thị", "Quy chế", "Quy định", "Thông cáo", "Thông báo", "Hướng dẫn",
+        "Chương trình", "Kế hoạch", "Phương án", "Đề án", "Dự án", "Báo cáo",
+        "Tờ trình", "Hợp đồng", "Giấy ủy quyền", "Phiếu gửi", "Phiếu chuyển", "Phiếu báo"
+    ]:
+        return _form_van_ban_co_ten_loai(doc_type, topic, today, citations)
+        
+    # 5. Phụ lục đính kèm
+    elif doc_type == "Văn bản kèm theo quyết định":
+        return _form_van_ban_kem_theo(doc_type, topic, today, citations)
 
-    return _build_official_letter(request, topic, today, citations)
+    # Fallback an toàn nếu có lỗi truyền dữ liệu
+    return _form_cong_van(topic, today, citations)
 
+# --- CÁC HÀM XÂY DỰNG HEADER/FOOTER DÙNG CHUNG ---
 
-def _build_official_letter(
-    request: str,
-    topic: str,
-    today: date,
-    citations: list[Citation],
-) -> str:
-    source_marks = _source_marks(citations)
-    return f"""{_header(today)}
+def _header_standard(today: date, agency_parent="[TÊN CƠ QUAN CHỦ QUẢN]", agency_name="[TÊN CƠ QUAN BAN HÀNH]"):
+    return f"""{agency_parent}
+{agency_name}
+-------
+Số: ... /...
 
-Số: .../CV-...
-V/v {topic}
+CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+Độc lập - Tự do - Hạnh phúc
+---------------
+[Địa danh], ngày {today.day:02d} tháng {today.month:02d} năm {today.year}"""
 
-Kính gửi: [Tên cơ quan/đơn vị/cá nhân nhận công văn]
-
-1. Thông tin truy xuất dùng để soạn thảo
-{_format_source_overview(citations)}
-
-2. Nội dung công văn
-Từ yêu cầu của người dùng: "{request}", bản nháp công văn cần bám các nguồn {source_marks} và có thể trình bày như sau:
-- Nêu rõ đơn vị gửi, đơn vị nhận và mục đích ban hành công văn {source_marks}.
-- Trình bày nội dung đề nghị/phối hợp theo đúng phạm vi thông tin đã truy xuất {source_marks}.
-- Ghi rõ thời hạn phản hồi, đầu mối liên hệ và tài liệu/biểu mẫu kèm theo nếu người soạn thảo xác nhận có áp dụng {source_marks}.
-
-3. Đề nghị thực hiện
-Đề nghị [đơn vị nhận] phối hợp thực hiện nội dung nêu trên và phản hồi về [đầu mối tiếp nhận] trước ngày [ngày/tháng/năm].
-
-Nơi nhận:
+def _footer_signature(position="[CHỨC DANH NGƯỜI KÝ]"):
+    return f"""Nơi nhận:
 - Như trên;
-- Lưu: ...
+- Lưu: VT, [Đơn vị soạn thảo].
 
-NGƯỜI KÝ
-[Chức vụ, họ tên]
+{position}
+(Ký, đóng dấu)
 
-{_quality_note()}
+[Họ và tên người ký]"""
 
-Nguồn tham khảo
-{_format_reference_list(citations)}
+# --- 12 FORM CHI TIẾT ---
+
+def _form_cong_van(topic, today, citations):
+    return f"""{_header_standard(today)}
+V/v: {topic}
+
+Kính gửi: 
+- [Tên đơn vị/cá nhân nhận 1];
+- [Tên đơn vị/cá nhân nhận 2].
+
+[Nội dung Công văn: AI soạn thảo căn cứ vào dữ liệu RAG tại đây. Sử dụng trích dẫn {_source_marks(citations)} khi nêu thông tin nguồn.]
+
+{_footer_signature()}
 """
 
+def _form_cong_dien(topic, today, citations):
+    return f"""{_header_standard(today)}
 
-def _build_notice(
-    request: str,
-    topic: str,
-    today: date,
-    citations: list[Citation],
-) -> str:
-    source_marks = _source_marks(citations)
-    return f"""{_header(today)}
+CÔNG ĐIỆN
+Về việc: {topic}
 
-Số: .../TB-...
+[CHỨC DANH NGƯỜI BAN HÀNH] điện:
+- [Đơn vị nhận điện 1];
+- [Đơn vị nhận điện 2].
 
-THÔNG BÁO
-Về {topic}
+[Nội dung Công điện: Trình bày ngắn gọn, khẩn trương các mệnh lệnh/yêu cầu dựa trên dữ liệu {_source_marks(citations)}.]
 
-1. Thông tin truy xuất dùng để soạn thảo
-{_format_source_overview(citations)}
-
-2. Nội dung thông báo
-Theo yêu cầu: "{request}", thông báo này chỉ sử dụng các nguồn {source_marks} để gợi ý các nội dung cần có:
-- Mục đích/nội dung thông báo: [điền nội dung đã được người soạn thảo xác nhận] {source_marks}.
-- Thời gian, địa điểm hoặc hình thức thực hiện: [điền thông tin cụ thể].
-- Thành phần tham dự/đối tượng nhận thông báo: [điền đối tượng].
-- Yêu cầu chuẩn bị hoặc phản hồi: [điền yêu cầu cụ thể] {source_marks}.
-
-3. Tổ chức thực hiện
-Đề nghị các đơn vị, cá nhân liên quan theo dõi thông báo và thực hiện đúng nội dung sau khi được người có thẩm quyền rà soát.
-
-Nơi nhận:
-- Các đơn vị/cá nhân liên quan;
-- Lưu: ...
-
-NGƯỜI KÝ
-[Chức vụ, họ tên]
-
-{_quality_note()}
-
-Nguồn tham khảo
-{_format_reference_list(citations)}
+{_footer_signature()}
 """
 
+def _form_giay_moi(topic, today, citations):
+    return f"""{_header_standard(today)}
 
-def _build_proposal(
-    request: str,
-    topic: str,
-    today: date,
-    citations: list[Citation],
-) -> str:
-    source_marks = _source_marks(citations)
-    return f"""{_header(today)}
+GIẤY MỜI
+{topic.upper()}
 
-Số: .../TTr-...
+[Tên cơ quan ban hành] trân trọng kính mời: [Tên đơn vị/cá nhân]
+Tới dự: {topic}
+Chủ trì: [Họ tên chuyên viên/lãnh đạo chủ trì]
+Thời gian: [Giờ... ngày... tháng... năm...]
+Địa điểm: [Phòng họp..., địa chỉ...]
+Nội dung: [AI tóm tắt nội dung cuộc họp từ nguồn {_source_marks(citations)}.]
 
-TỜ TRÌNH
-Về {topic}
-
-Kính gửi: [Cấp có thẩm quyền xem xét/phê duyệt]
-
-1. Thông tin truy xuất dùng để soạn thảo
-{_format_source_overview(citations)}
-
-2. Sự cần thiết
-Từ yêu cầu: "{request}", người soạn thảo cần trình bày sự cần thiết dựa trên các thông tin đã truy xuất {source_marks}. Không bổ sung mục tiêu, kinh phí hoặc tiến độ chưa có nguồn xác nhận.
-
-3. Nội dung đề xuất
-- Mục tiêu/đầu ra dự kiến: [điền mục tiêu đã xác nhận] {source_marks}.
-- Phạm vi thực hiện: [điền phạm vi].
-- Nhiệm vụ chính: [điền các hạng mục công việc].
-- Nguồn lực/kinh phí dự kiến: [chỉ điền khi đã có số liệu được kiểm chứng].
-- Tiến độ thực hiện: [điền mốc thời gian].
-
-4. Kiến nghị
-Kính đề nghị [cấp có thẩm quyền] xem xét, phê duyệt chủ trương/kế hoạch sau khi các thông tin trong bản nháp được kiểm tra và hoàn thiện.
-
-Nơi nhận:
-- Như trên;
-- Lưu: ...
-
-NGƯỜI TRÌNH
-[Chức vụ, họ tên]
-
-{_quality_note()}
-
-Nguồn tham khảo
-{_format_reference_list(citations)}
+{_footer_signature()}
 """
 
+def _form_giay_gioi_thieu(topic, today, citations):
+    return f"""{_header_standard(today)}
 
-def _build_decision(
-    request: str,
-    topic: str,
-    today: date,
-    citations: list[Citation],
-) -> str:
-    source_marks = _source_marks(citations)
-    return f"""{_header(today)}
+GIẤY GIỚI THIỆU
 
-Số: .../QĐ-...
+[Tên cơ quan ban hành] trân trọng giới thiệu:
+Ông (bà): [Họ và tên]
+Chức vụ: [Chức vụ hiện tại]
+Được cử đến: [Tên cơ quan đến làm việc]
+Về việc: {topic} {_source_marks(citations)}
 
+Đề nghị Quý cơ quan tạo điều kiện để ông (bà) có tên ở trên hoàn thành nhiệm vụ.
+Giấy này có giá trị đến hết ngày: [Ngày/Tháng/Năm].
+
+{_footer_signature()}
+"""
+
+def _form_giay_nghi_phep(topic, today, citations):
+    return f"""{_header_standard(today)}
+
+GIẤY NGHỈ PHÉP
+
+Xét đơn đề nghị nghỉ phép của Ông (bà): [Họ và tên]
+Cấp cho Ông (bà): [Họ và tên]
+Chức vụ: [Chức vụ]
+Được nghỉ phép trong thời gian: [Số ngày] ngày (Từ ... đến ...)
+Tại: [Nơi nghỉ phép]
+Lý do: {topic} {_source_marks(citations)}
+
+Số ngày nghỉ trên được tính vào thời gian nghỉ [hàng năm/việc riêng].
+
+{_footer_signature()}
+"""
+
+def _form_bien_ban(topic, today, citations):
+    return f"""{_header_standard(today)}
+
+BIÊN BẢN
+{topic.upper()}
+
+Thời gian bắt đầu: [Giờ... ngày... tháng... năm...]
+Địa điểm: [Nơi diễn ra]
+Thành phần tham dự: [Liệt kê danh sách]
+Chủ trì: [Họ và tên]
+Thư ký: [Họ và tên]
+
+Nội dung (theo diễn biến cuộc họp):
+[AI tổng hợp diễn biến và kết luận dựa trên dữ liệu RAG {_source_marks(citations)}.]
+
+Cuộc họp kết thúc vào .... giờ .... cùng ngày.
+
+THƯ KÝ                      CHỦ TỌA
+(Ký tên)                    (Ký, đóng dấu)
+"""
+
+def _form_nghi_quyet(topic, today, citations):
+    return f"""{_header_standard(today)}
+
+NGHỊ QUYẾT
+{topic.upper()}
+
+THẨM QUYỀN BAN HÀNH
+Căn cứ [Các văn bản pháp lý làm căn cứ ban hành] {_source_marks(citations)};
+[Diễn giải bối cảnh thông qua Nghị quyết].
+
+QUYẾT NGHỊ:
+[Nội dung Nghị quyết chi tiết: AI soạn các Điều 1, Điều 2...]
+
+{_footer_signature()}
+"""
+
+def _form_quyet_dinh_truc_tiep(topic, today, citations):
+    return f"""{_header_standard(today)}
 QUYẾT ĐỊNH
-Về {topic}
+Về việc: {topic}
 
-[CHỨC DANH NGƯỜI CÓ THẨM QUYỀN]
-
-Căn cứ thông tin truy xuất từ kho tri thức: {source_marks};
-Xét yêu cầu soạn thảo: "{request}";
+THẨM QUYỀN BAN HÀNH
+Căn cứ [Luật/Quy định liên quan] {_source_marks(citations)};
+Theo đề nghị của [Chức danh đơn vị tham mưu].
 
 QUYẾT ĐỊNH:
+Điều 1. [AI soạn nội dung quyết định trực tiếp: ví dụ bổ nhiệm, khen thưởng...]
+Điều 2. [Trách nhiệm thi hành]
+Điều 3. [Hiệu lực thi hành]
 
-Điều 1. [Nội dung quyết định]
-Ban hành/Thành lập/Phê duyệt [nội dung cụ thể] theo phạm vi đã được người soạn thảo kiểm chứng từ nguồn {source_marks}.
-
-Điều 2. [Trách nhiệm thực hiện]
-[Đơn vị/cá nhân liên quan] có trách nhiệm tổ chức thực hiện, phối hợp, báo cáo tiến độ và xử lý vướng mắc theo nhiệm vụ được giao {source_marks}.
-
-Điều 3. [Hiệu lực và thi hành]
-Quyết định này có hiệu lực kể từ ngày ký. [Các đơn vị/cá nhân liên quan] chịu trách nhiệm thi hành Quyết định này.
-
-Nơi nhận:
-- Như Điều 3;
-- Lưu: ...
-
-NGƯỜI KÝ
-[Chức vụ, họ tên]
-
-{_quality_note()}
-
-Nguồn tham khảo
-{_format_reference_list(citations)}
+{_footer_signature()}
 """
 
+def _form_quyet_dinh_gian_tiep(topic, today, citations):
+    return f"""{_header_standard(today)}
+QUYẾT ĐỊNH
+Ban hành (Phê duyệt): {topic}
 
-def _build_no_source_draft(
-    *,
-    request: str,
-    doc_type: str,
-    topic: str,
-    today: date,
-) -> str:
-    return f"""{_header(today)}
+THẨM QUYỀN BAN HÀNH
+Căn cứ [Căn cứ pháp lý] {_source_marks(citations)};
+Theo đề nghị của [Đơn vị tham mưu].
+
+QUYẾT ĐỊNH:
+Điều 1. Ban hành (Phê duyệt) kèm theo Quyết định này [Tên văn bản ban hành].
+Điều 2. Quyết định này có hiệu lực kể từ ngày ký.
+Điều 3. [Trách nhiệm thi hành].
+
+{_footer_signature()}
+"""
+
+def _form_van_ban_co_ten_loai(doc_type, topic, today, citations):
+    return f"""{_header_standard(today)}
 
 {doc_type.upper()}
-Về {topic}
+{topic.upper()}
 
-Trạng thái: CHƯA ĐỦ NGUỒN KIỂM CHỨNG ĐỂ SINH BẢN NHÁP HOÀN CHỈNH
+[Nội dung văn bản: AI tự động phân bổ mục lục dựa trên {doc_type}. 
+Ví dụ Tờ trình cần có: 1. Sự cần thiết; 2. Nội dung đề xuất; 3. Kiến nghị.] 
+Dữ liệu nguồn: {_source_marks(citations)}
 
-Yêu cầu người dùng:
-"{request}"
-
-Khung xử lý đề xuất:
-- Bổ sung văn bản mẫu hoặc tài liệu liên quan vào kho tri thức.
-- Chạy lại bước truy xuất để có nguồn tham khảo.
-- Chỉ hoàn thiện nội dung sau khi có nguồn phù hợp và được con người rà soát.
-
-Nguồn tham khảo
-- Chưa có nguồn phù hợp trong kho tri thức.
-
-{_quality_note()}
+{_footer_signature()}
 """
 
+def _form_van_ban_kem_theo(doc_type, topic, today, citations):
+    return f"""[TÊN CƠ QUAN BAN HÀNH]
 
-def _build_topic(request: str, doc_type: str) -> str:
-    normalized_request = " ".join(request.strip().split())
-    if not normalized_request:
-        return doc_type.lower()
+{doc_type.upper()}
+{topic.upper()}
+(Kèm theo Quyết định số: ..../QĐ-... ngày ... tháng ... năm ... của ...)
+-------
+[AI soạn thảo nội dung quy chế/quy định/đề án chi tiết tại đây. 
+Chia thành các Chương, Điều, Khoản dựa trên dữ liệu nguồn {_source_marks(citations)}.]
+"""
 
-    lowered = normalized_request.lower()
-    prefixes = [
-        "soạn công văn",
-        "soạn thông báo",
-        "soạn tờ trình",
-        "soạn quyết định",
-        "tạo công văn",
-        "tạo thông báo",
-        "tạo tờ trình",
-        "tạo quyết định",
-        "soạn",
-        "tạo",
-    ]
-    for prefix in prefixes:
-        if lowered.startswith(prefix):
-            normalized_request = normalized_request[len(prefix) :].strip(" :.-")
-            break
-
-    return normalized_request[:120] or doc_type.lower()
-
-
-def _header(today: date) -> str:
-    return f"""CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
-Độc lập - Tự do - Hạnh phúc
-
-..., ngày {today.day:02d} tháng {today.month:02d} năm {today.year}"""
-
+# --- CÁC HÀM TRỢ GIÚP (HELPER FUNCTIONS) ---
 
 def _build_citations(search_results: list[SearchResult]) -> list[Citation]:
     citations: list[Citation] = []
@@ -293,46 +281,50 @@ def _build_citations(search_results: list[SearchResult]) -> list[Citation]:
                 matched_terms=result.matched_terms,
             )
         )
-
     return citations
-
-
-def _format_source_overview(citations: list[Citation]) -> str:
-    return "\n".join(
-        f"- [{citation.marker}] {citation.title}: {citation.excerpt}"
-        for citation in citations
-    )
-
-
-def _format_reference_list(citations: list[Citation]) -> str:
-    return "\n".join(
-        (
-            f"- [{citation.marker}] {citation.document_id} - {citation.source}; "
-            f"điểm BM25: {citation.score:.3f}; từ khóa khớp: "
-            f"{_matched_terms_text(citation.matched_terms)}"
-        )
-        for citation in citations
-    )
-
 
 def _source_marks(citations: list[Citation]) -> str:
     return ", ".join(f"[{citation.marker}]" for citation in citations)
 
-
-def _matched_terms_text(matched_terms: list[str]) -> str:
-    return ", ".join(matched_terms) if matched_terms else "khớp theo ngữ cảnh"
-
+def _build_topic(request: str, doc_type: str) -> str:
+    normalized = " ".join(request.strip().split())
+    # Loại bỏ các tiền tố thừa
+    for p in ["soạn ", "tạo ", "lập ", doc_type.lower()]:
+        if normalized.lower().startswith(p):
+            normalized = normalized[len(p):].strip(" :.-")
+    return normalized[:120] or doc_type.lower()
 
 def _excerpt(content: str, max_length: int = 260) -> str:
     normalized = " ".join(content.split())
-    if len(normalized) <= max_length:
-        return normalized
-
+    if len(normalized) <= max_length: return normalized
     return normalized[: max_length - 3].rstrip() + "..."
 
+def _build_no_source_draft(*, request: str, doc_type: str, topic: str, today: date) -> str:
+    """Hàm xử lý khi kho tri thức không có tài liệu phù hợp"""
+    return f"""{_header_standard(today)}
+
+{doc_type.upper()}
+Về: {topic}
+
+Trạng thái: CHƯA ĐỦ NGUỒN KIỂM CHỨNG ĐỂ SINH BẢN NHÁP HOÀN CHỈNH
+
+Yêu cầu người dùng:
+"{request}"
+
+Khung xử lý đề xuất:
+1. Bổ sung văn bản mẫu hoặc tài liệu quy định liên quan vào kho tri thức (Tab Kho tri thức).
+2. Kiểm tra lại từ khóa trong yêu cầu soạn thảo để hệ thống truy xuất chính xác hơn.
+3. Bản nháp chi tiết chỉ được sinh ra khi hệ thống tìm thấy ít nhất một nguồn tham khảo tin cậy.
+
+Nguồn tham khảo:
+- (Chưa có nguồn phù hợp trong kho tri thức)
+
+{_quality_note()}"""
 
 def _quality_note() -> str:
+    """Ghi chú kiểm soát chất lượng"""
     return (
-        "Ghi chú kiểm soát: Đây là bản nháp hỗ trợ soạn thảo. Người dùng phải rà soát "
-        "thể thức, thẩm quyền, số liệu, ngày tháng và tính phù hợp của nguồn trước khi sử dụng."
+        "Ghi chú kiểm soát: Đây là bản nháp hỗ trợ soạn thảo tự động. "
+        "Người dùng bắt buộc phải rà soát lại thể thức, thẩm quyền, số liệu "
+        "và tính pháp lý của nội dung trước khi ban hành."
     )

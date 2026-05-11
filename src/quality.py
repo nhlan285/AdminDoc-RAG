@@ -199,19 +199,24 @@ def _human_review_check(draft: str) -> QualityCheck:
         message="Bản nháp cần nhắc người dùng rà soát trước khi sử dụng.",
     )
 
-
 def _required_fragments(doc_type: str) -> list[str]:
+    # Quốc hiệu & Tiêu ngữ là bắt buộc với hầu hết văn bản hành chính (NĐ 30)
+    base_requirements = [
+        "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", 
+        "Độc lập - Tự do - Hạnh phúc",
+        "Nơi nhận:"
+    ]
+    
     if doc_type == "Công văn":
-        return ["Số:", "Kính gửi:", "Nơi nhận:"]
+        return base_requirements + ["Kính gửi:"]
     if doc_type == "Thông báo":
-        return ["THÔNG BÁO", "Nơi nhận:"]
+        return base_requirements + ["THÔNG BÁO"]
     if doc_type == "Tờ trình":
-        return ["TỜ TRÌNH", "Kính gửi:", "Kiến nghị"]
-    if doc_type == "Quyết định hành chính đơn giản":
-        return ["QUYẾT ĐỊNH", "Điều 1.", "Điều 2.", "Điều 3."]
-
-    return ["Số:"]
-
+        return base_requirements + ["TỜ TRÌNH", "Kính gửi:", "Kiến nghị"]
+    if doc_type == "Quyết định":
+        return base_requirements + ["QUYẾT ĐỊNH", "Điều 1.", "Điều 2.", "Điều 3."]
+        
+    return base_requirements
 
 def _calculate_score(checks: list[QualityCheck]) -> int:
     score = 100

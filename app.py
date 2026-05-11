@@ -4,7 +4,9 @@ import json
 from pathlib import Path
 
 import streamlit as st
-
+import io
+import docx # Thư viện python-docx
+from pypdf import PdfReader
 from src.documents import Document, load_documents
 from src.docx_exporter import export_draft_to_docx
 from src.evaluation import (
@@ -15,7 +17,7 @@ from src.evaluation import (
     run_retrieval_tests,
 )
 from src.llm import LLMConfig, describe_llm_status, generate_draft, load_llm_config
-from src.preprocessing import build_chunks, decode_file_bytes, parse_documents_from_text
+from src.preprocessing import build_chunks, extract_text_from_binary, parse_documents_from_text
 from src.quality import evaluate_draft, report_to_rows
 from src.retriever import retrieve
 
@@ -25,12 +27,18 @@ DATA_PATH = BASE_DIR / "data" / "admin_docs.json"
 SPRINT2_SAMPLE_PATH = BASE_DIR / "data" / "sprint2_sample_docs.json"
 RETRIEVAL_TEST_CASES_PATH = BASE_DIR / "data" / "retrieval_test_cases.json"
 GENERATION_TEST_CASES_PATH = BASE_DIR / "data" / "generation_test_cases.json"
+
+# ĐÃ CẬP NHẬT 12 LOẠI VĂN BẢN THEO CHUẨN NGHỊ ĐỊNH 30
 DOCUMENT_TYPES = [
-    "Công văn",
-    "Thông báo",
-    "Tờ trình",
-    "Quyết định hành chính đơn giản",
+    "Nghị quyết (cá biệt)", "Quyết định (trực tiếp)", "Quyết định (gián tiếp)",
+    "Chỉ thị", "Quy chế", "Quy định", "Thông cáo", "Thông báo", "Hướng dẫn",
+    "Chương trình", "Kế hoạch", "Phương án", "Đề án", "Dự án", "Báo cáo",
+    "Biên bản", "Tờ trình", "Hợp đồng", "Công văn", "Công điện", "Bản ghi nhớ",
+    "Bản thỏa thuận", "Giấy ủy quyền", "Giấy mời", "Giấy giới thiệu",
+    "Giấy nghỉ phép", "Phiếu gửi", "Phiếu chuyển", "Phiếu báo", "Thư công",
+    "Văn bản kèm theo quyết định"
 ]
+
 SOURCE_SCOPE_OPTIONS = {
     "Tất cả nguồn": None,
     "Chỉ nguồn hệ thống/mẫu": "system",
@@ -230,20 +238,20 @@ def _render_knowledge_tab(*, source_scope: str | None, source_scope_label: str) 
 
     chunks = _current_chunks()
     col_a, col_b, col_c, col_d = st.columns(4)
-    col_a.metric("Chunk", len(chunks))
+    col_a.metric("Số lượng Chunk", len(chunks))
     col_b.metric("Tài liệu gốc", len(_parent_ids(chunks)))
     col_c.metric("Upload riêng", len(_filter_chunks_by_source_scope(chunks, "user_upload")))
     col_d.metric("Loại văn bản", len({document.doc_type for document in chunks}))
 
     action_col, delete_upload_col, reset_col = st.columns([2, 1, 1])
     with action_col:
-        if st.button("Nạp 5 tài liệu mẫu Sprint 2/3/4", type="primary"):
+        if st.button("Nạp tài liệu mẫu hệ thống", type="primary"):
             sample_chunks = build_chunks(get_sprint2_sample_documents())
             added = _merge_chunks(sample_chunks)
-            st.success(f"Đã nạp thêm {added} chunk từ bộ dữ liệu mẫu Sprint 2/3/4.")
+            st.success(f"Đã nạp thêm {added} chunk từ bộ dữ liệu mẫu.")
 
     with delete_upload_col:
-        if st.button("Xóa upload riêng"):
+        if st.button("Xóa dữ liệu upload"):
             removed = _delete_user_upload_chunks()
             st.success(f"Đã xóa {removed} chunk upload riêng khỏi phiên làm việc.")
 
@@ -252,27 +260,34 @@ def _render_knowledge_tab(*, source_scope: str | None, source_scope_label: str) 
             base_chunks = build_chunks(get_base_documents())
             st.session_state["knowledge_chunks"] = base_chunks
             st.session_state["import_log"] = [
-                f"Đã reset về {len(base_chunks)} chunk nền từ data/admin_docs.json."
+                f"Đã reset về {len(base_chunks)} chunk nền từ hệ thống."
             ]
-            st.success("Đã reset kho tri thức về dữ liệu nền.")
+            st.success("Đã reset kho tri thức về mặc định.")
 
-    with st.expander("Upload tài liệu riêng .txt, .md hoặc .json", expanded=True):
-        st.warning(
-            "Chỉ upload tài liệu được phép dùng cho demo. Không đưa tài liệu mật, dữ liệu cá nhân hoặc file chưa được phép chia sẻ vào kho tri thức."
+    # CẬP NHẬT: Hỗ trợ PDF và DOCX ngay tại giao diện Upload
+    with st.expander("Upload tài liệu nghiệp vụ (PDF, DOCX, TXT, MD, JSON)", expanded=True):
+        st.info(
+            "Hệ thống hiện đã hỗ trợ trích xuất nội dung trực tiếp từ file Word (.docx) và PDF (.pdf) "
+            "để phục vụ việc soạn thảo dựa trên tài liệu thực tế của đơn vị."
         )
-        upload_doc_type = st.selectbox("Loại mặc định cho file txt/md", DOCUMENT_TYPES)
-        chunk_size = st.slider("Số từ tối đa mỗi chunk", 60, 220, 120, step=20)
-        overlap = st.slider("Số từ overlap giữa các chunk", 0, 60, 20, step=10)
+        
+        upload_doc_type = st.selectbox("Phân loại mặc định cho tài liệu nạp", DOCUMENT_TYPES)
+        
+        chunk_size = st.slider("Số từ tối đa mỗi đoạn (Chunk size)", 60, 400, 150, step=10)
+        overlap = st.slider("Số từ gối đầu (Overlap)", 0, 100, 30, step=5)
+        
         uploaded_files = st.file_uploader(
-            "Chọn file",
-            type=["txt", "md", "json"],
+            "Kéo thả file PDF, Word hoặc Text vào đây",
+            type=["txt", "md", "json", "pdf", "docx"], # Đã thêm pdf và docx
             accept_multiple_files=True,
         )
 
-        if st.button("Nạp file đã chọn"):
+        if st.button("Tiến hành nạp vào kho tri thức"):
             if not uploaded_files:
                 st.warning("Vui lòng chọn ít nhất một file trước khi nạp.")
             else:
+                # Lưu ý: Hàm _parse_uploaded_files cần được cập nhật 
+                # logic extract_text_from_binary như đã hướng dẫn trước đó
                 added_documents, errors = _parse_uploaded_files(
                     uploaded_files=uploaded_files,
                     default_doc_type=upload_doc_type,
@@ -286,28 +301,29 @@ def _render_knowledge_tab(*, source_scope: str | None, source_scope_label: str) 
 
                 if added:
                     st.success(
-                        f"Đã nạp thêm {added} chunk upload riêng từ {len(added_documents)} tài liệu."
+                        f"Thành công: Đã nạp {added} đoạn nội dung từ {len(added_documents)} tài liệu mới."
                     )
                 if errors:
-                    st.error("\n".join(errors))
+                    for err in errors:
+                        st.error(err)
 
     st.divider()
-    st.subheader("Danh sách chunk trong kho")
+    st.subheader("Dữ liệu hiện có trong kho")
     rows = _chunk_rows(_current_chunks())
     st.dataframe(rows, use_container_width=True, hide_index=True)
 
-    st.subheader("Kiểm tra truy xuất")
-    st.caption(f"Đang kiểm tra với phạm vi nguồn: {source_scope_label}.")
+    st.subheader("Kiểm tra khả năng truy xuất")
+    st.caption(f"Kiểm tra xem AI sẽ tìm thấy gì với nguồn: {source_scope_label}.")
     preview_query = st.text_input(
-        "Câu hỏi kiểm tra",
-        value="soạn công văn đề nghị cung cấp số liệu chuyển đổi số",
+        "Nhập câu hỏi hoặc nội dung cần tìm trong kho tri thức",
+        placeholder="Ví dụ: quy định về mức chi khen thưởng năm 2026",
     )
     preview_doc_type = st.selectbox(
-        "Ưu tiên loại văn bản",
-        ["Không lọc"] + DOCUMENT_TYPES,
+        "Lọc theo loại văn bản",
+        ["Tất cả"] + DOCUMENT_TYPES,
     )
     if preview_query.strip():
-        doc_type_filter = None if preview_doc_type == "Không lọc" else preview_doc_type
+        doc_type_filter = None if preview_doc_type == "Tất cả" else preview_doc_type
         results = retrieve(
             preview_query,
             _filter_chunks_by_source_scope(_current_chunks(), source_scope),
@@ -316,14 +332,41 @@ def _render_knowledge_tab(*, source_scope: str | None, source_scope_label: str) 
         )
         _render_search_results(results)
 
+    # Các bảng test bên dưới giữ nguyên
     _render_retrieval_test_panel()
     _render_generation_test_panel()
     _render_quality_test_panel()
 
-    with st.expander("Nhật ký nạp dữ liệu"):
+    with st.expander("Lịch sử nạp dữ liệu"):
         for line in st.session_state.get("import_log", []):
             st.write(f"- {line}")
 
+def extract_text_from_binary(file_bytes: bytes, filename: str) -> str:
+    """Hàm hỗ trợ trích xuất văn bản từ nhiều định dạng file khác nhau"""
+    extension = filename.split('.')[-1].lower()
+    
+    try:
+        # 1. Xử lý file WORD (.docx)
+        if extension == 'docx':
+            doc = docx.Document(io.BytesIO(file_bytes))
+            return "\n".join([para.text for para in doc.paragraphs])
+        
+        # 2. Xử lý file PDF (.pdf)
+        elif extension == 'pdf':
+            reader = PdfReader(io.BytesIO(file_bytes))
+            text = ""
+            for page in reader.pages:
+                extracted = page.extract_text()
+                if extracted:
+                    text += extracted + "\n"
+            return text
+        
+        # 3. Mặc định xử lý các file văn bản (txt, md, json)
+        else:
+            return file_bytes.decode("utf-8")
+            
+    except Exception as e:
+        raise ValueError(f"Lỗi khi đọc nội dung file: {str(e)}")
 
 def _parse_uploaded_files(
     *,
@@ -335,7 +378,11 @@ def _parse_uploaded_files(
 
     for uploaded_file in uploaded_files:
         try:
-            text = decode_file_bytes(uploaded_file.getvalue())
+            # CẬP NHẬT: Thay decode_file_bytes bằng extract_text_from_binary
+            # để xử lý được cả PDF và DOCX
+            text = extract_text_from_binary(uploaded_file.getvalue(), uploaded_file.name)
+            
+            # Sau khi có text, đưa vào bộ parse chuẩn của hệ thống
             parsed = parse_documents_from_text(
                 filename=uploaded_file.name,
                 text=text,
@@ -343,10 +390,10 @@ def _parse_uploaded_files(
                 source_kind="user_upload",
             )
             documents.extend(parsed)
-        except json.JSONDecodeError as error:
-            errors.append(f"{uploaded_file.name}: JSON không hợp lệ ({error.msg}).")
-        except ValueError as error:
-            errors.append(f"{uploaded_file.name}: {error}.")
+            
+        except Exception as error:
+            # Bắt mọi lỗi từ định dạng file đến lỗi giải mã
+            errors.append(f"Tài liệu '{uploaded_file.name}' bị lỗi: {str(error)}")
 
     return documents, errors
 
@@ -558,25 +605,29 @@ def _source_kind_label(source_kind: str) -> str:
     return SOURCE_KIND_LABELS.get(source_kind, source_kind or "Không rõ")
 
 
-def _docx_file_name(doc_type: str) -> str:
-    mapping = {
-        "Công văn": "cong-van",
-        "Thông báo": "thong-bao",
-        "Tờ trình": "to-trinh",
-        "Quyết định hành chính đơn giản": "quyet-dinh",
+def _get_safe_filename(doc_type: str) -> str:
+    SAFE_FILENAMES = {
+        "Nghị quyết (cá biệt)": "nghi-quyet",
+        "Quyết định (trực tiếp)": "quyet-dinh-truc-tiep",
+        "Quyết định (gián tiếp)": "quyet-dinh-gian-tiep",
+        "Chỉ thị": "chi-thi", "Quy chế": "quy-che", "Quy định": "quy-dinh",
+        "Thông cáo": "thong-cao", "Thông báo": "thong-bao", "Hướng dẫn": "huong-dan",
+        "Chương trình": "chuong-trinh", "Kế hoạch": "ke-hoach", "Phương án": "phuong-an",
+        "Đề án": "de-an", "Dự án": "du-an", "Báo cáo": "bao-cao",
+        "Biên bản": "bien-ban", "Tờ trình": "to-trinh", "Hợp đồng": "hop-dong",
+        "Công văn": "cong-van", "Công điện": "cong-dien", "Bản ghi nhớ": "ban-ghi-nho",
+        "Bản thỏa thuận": "ban-thoa-thuan", "Giấy ủy quyền": "giay-uy-quyen",
+        "Giấy mời": "giay-moi", "Giấy giới thiệu": "giay-gioi-thieu",
+        "Giấy nghỉ phép": "giay-nghi-phep", "Phiếu gửi": "phieu-gui",
+        "Phiếu chuyển": "phieu-chuyen", "Phiếu báo": "phieu-bao",
+        "Thư công": "thu-cong", "Văn bản kèm theo quyết định": "van-ban-kem-theo",
     }
-    return f"ban-nhap-{mapping.get(doc_type, 'van-ban')}.docx"
+    return SAFE_FILENAMES.get(doc_type, "van-ban")
 
+def _docx_file_name(doc_type: str) -> str:
+    return f"ban-nhap-{_get_safe_filename(doc_type)}.docx"
 
 def _txt_file_name(doc_type: str) -> str:
-    mapping = {
-        "Công văn": "cong-van",
-        "Thông báo": "thong-bao",
-        "Tờ trình": "to-trinh",
-        "Quyết định hành chính đơn giản": "quyet-dinh",
-    }
-    return f"ban-nhap-{mapping.get(doc_type, 'van-ban')}.txt"
-
-
+    return f"ban-nhap-{_get_safe_filename(doc_type)}.txt"
 if __name__ == "__main__":
     main()

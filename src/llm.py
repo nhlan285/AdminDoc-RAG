@@ -196,13 +196,13 @@ def _generate_with_provider(
 
 def describe_llm_status(config: LLMConfig) -> str:
     if config.provider == "mock":
-        return "Mock mode"
+        return "Chế độ mô phỏng"
     if config.provider == "gemini" and config.gemini_api_key:
-        return f"Gemini ready ({config.gemini_model})"
+        return f"Gemini sẵn sàng ({config.gemini_model})"
     if config.provider == "gemini":
         return "Gemini thiếu API key"
     if config.provider == "openai" and config.openai_api_key:
-        return f"OpenAI ready ({config.openai_model})"
+        return f"OpenAI sẵn sàng ({config.openai_model})"
     if config.provider == "openai":
         return "OpenAI thiếu API key"
     return f"Provider không hỗ trợ: {config.provider}"
@@ -248,20 +248,23 @@ def _generate_with_gemini(
         config=types.GenerateContentConfig(
             system_instruction=_build_instructions(),
             max_output_tokens=config.gemini_max_output_tokens,
-            temperature=0.2,
+            temperature=0.2, # Giữ Temperature thấp để AI không bị "ảo giác" văn phong
         ),
     )
     return (response.text or "").strip()
 
 
 def _build_instructions() -> str:
-    return """Bạn là trợ lý hỗ trợ soạn thảo văn bản hành chính Việt Nam.
-Chỉ được sử dụng thông tin trong phần NGỮ CẢNH TRUY XUẤT.
-Không tự bịa điều luật, số liệu, ngày tháng, cơ quan, thẩm quyền hoặc căn cứ pháp lý.
-Nếu thông tin chưa có trong ngữ cảnh, hãy để placeholder trong ngoặc vuông.
-Giữ citation dạng [S1], [S2], [S3] ở các câu có dùng nguồn.
-Cuối văn bản phải có mục "Nguồn tham khảo".
-Văn bản là bản nháp hỗ trợ, luôn có ghi chú yêu cầu con người rà soát."""
+    # SYSTEM PROMPT ĐƯỢC NÂNG CẤP ĐỂ ÉP AI VÀO KHUÔN KHỔ
+    return """Bạn là một Chuyên viên Văn thư lưu trữ bậc cao có nhiệm vụ hoàn thiện VĂN BẢN HÀNH CHÍNH.
+Tôi sẽ cung cấp cho bạn một KHUNG VĂN BẢN (TEMPLATE) chuẩn Nghị định 30.
+
+NHIỆM VỤ CỦA BẠN:
+1. Giữ nguyên 100% cấu trúc template, không được xóa Quốc hiệu, Tiêu ngữ hay các đề mục có sẵn.
+2. Chỉ tập trung viết nội dung chi tiết để thay thế các phần dấu chấm "...." hoặc các phần nằm trong ngoặc vuông [...].
+3. Sử dụng thông tin từ NGỮ CẢNH TRUY XUẤT để điền vào. Nếu thông tin nào không có trong nguồn, hãy để nguyên hoặc để trống dạng [...] để người dùng tự điền.
+4. Tuyệt đối không thêm lời dẫn như "Dưới đây là bản nháp...". Trả về trực tiếp nội dung văn bản.
+5. Giữ citation dạng [S1], [S2] ở các câu có dùng nguồn."""
 
 
 def _build_input(
@@ -269,6 +272,9 @@ def _build_input(
     doc_type: str,
     search_results: list[SearchResult],
 ) -> str:
+    # Lấy Template chuẩn từ module generator
+    skeleton = build_draft(request, doc_type, search_results)
+
     context_lines = []
     for index, result in enumerate(search_results[:3], start=1):
         document = result.document
@@ -285,6 +291,7 @@ def _build_input(
             )
         )
 
+    # Đưa Template vào Prompt để AI có khung tham chiếu
     return f"""LOẠI VĂN BẢN CẦN SOẠN:
 {doc_type}
 
@@ -294,12 +301,12 @@ YÊU CẦU NGƯỜI DÙNG:
 NGỮ CẢNH TRUY XUẤT:
 {chr(10).join(context_lines)}
 
+KHUNG VĂN BẢN (TEMPLATE) CẦN HOÀN THIỆN:
+{skeleton}
+
 YÊU CẦU ĐẦU RA:
-- Soạn bản nháp theo đúng loại văn bản.
-- Có quốc hiệu, tiêu ngữ, số ký hiệu gợi ý, nội dung chính, nơi nhận/chữ ký gợi ý khi phù hợp.
-- Nội dung nào dựa trên nguồn phải gắn citation [S1], [S2] hoặc [S3].
-- Không thêm căn cứ pháp lý nếu ngữ cảnh không có căn cứ đó.
-- Không xóa mục Nguồn tham khảo."""
+- Hãy điền thông tin vào các vị trí [...] hoặc .... trong KHUNG VĂN BẢN dựa trên Ngữ cảnh truy xuất và Yêu cầu người dùng.
+- Trả về toàn bộ văn bản sau khi điền, tuyệt đối KHÔNG viết thêm lời chào hỏi, giải thích hay phân tích bên ngoài văn bản."""
 
 
 def _mock_result(
@@ -307,6 +314,7 @@ def _mock_result(
     doc_type: str,
     search_results: list[SearchResult],
 ) -> DraftResult:
+    # Ở chế độ Mock, nó sẽ trả thẳng Skeleton về giao diện
     return DraftResult(
         text=build_draft(request, doc_type, search_results),
         provider="mock",

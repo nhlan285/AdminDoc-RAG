@@ -15,19 +15,18 @@ from docx.shared import Cm, Mm, Pt
 FONT_NAME = "Times New Roman"
 BODY_FONT_SIZE = 13
 
-
 @dataclass(frozen=True)
 class ExportProfile:
-    font_name: str = FONT_NAME
-    body_font_size: int = BODY_FONT_SIZE
-    line_spacing: float = 1.15
-    paragraph_spacing_after_pt: int = 6
-    first_line_indent_cm: float = 1.27
-    top_margin_mm: int = 20
-    bottom_margin_mm: int = 20
-    left_margin_mm: int = 30
-    right_margin_mm: int = 15
-
+    font_name: str = "Times New Roman"  # Bắt buộc theo NĐ 30
+    body_font_size: int = 14            # NĐ 30 quy định từ 13 - 14
+    line_spacing: float = 1.15          # NĐ 30 quy định dòng đơn đến 1.5 lines
+    paragraph_spacing_after_pt: int = 6 # Tối thiểu 6pt
+    first_line_indent_cm: float = 1.27  # Lùi đầu dòng ~1-1.27cm
+    
+    top_margin_mm: int = 20             # NĐ 30: 20 - 25 mm
+    bottom_margin_mm: int = 20          # NĐ 30: 20 - 25 mm
+    left_margin_mm: int = 30            # NĐ 30: 30 - 35 mm
+    right_margin_mm: int = 15           # NĐ 30: 15 - 20 mm
 
 def export_draft_to_docx(
     *,
