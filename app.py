@@ -1,42 +1,31 @@
 from __future__ import annotations
-
 import json
 from pathlib import Path
-
 import streamlit as st
-import io
-import docx # Thư viện python-docx
-from pypdf import PdfReader
+
 from src.documents import Document, load_documents
 from src.docx_exporter import export_draft_to_docx
-from src.evaluation import (
-    load_generation_test_cases,
-    load_retrieval_test_cases,
-    run_quality_tests,
-    run_generation_tests,
-    run_retrieval_tests,
-)
+from src.evaluation import load_generation_test_cases, load_retrieval_test_cases, run_quality_tests, run_generation_tests, run_retrieval_tests
 from src.llm import LLMConfig, describe_llm_status, generate_draft, load_llm_config
 from src.preprocessing import build_chunks, extract_text_from_binary, parse_documents_from_text
 from src.quality import evaluate_draft, report_to_rows
 from src.retriever import retrieve
-
 
 BASE_DIR = Path(__file__).parent
 DATA_PATH = BASE_DIR / "data" / "admin_docs.json"
 SPRINT2_SAMPLE_PATH = BASE_DIR / "data" / "sprint2_sample_docs.json"
 RETRIEVAL_TEST_CASES_PATH = BASE_DIR / "data" / "retrieval_test_cases.json"
 GENERATION_TEST_CASES_PATH = BASE_DIR / "data" / "generation_test_cases.json"
+USER_DATA_PATH = BASE_DIR / "data" / "user_docs.json"
 
-# ĐÃ CẬP NHẬT 12 LOẠI VĂN BẢN THEO CHUẨN NGHỊ ĐỊNH 30
 DOCUMENT_TYPES = [
-    "Nghị quyết (cá biệt)", "Quyết định (trực tiếp)", "Quyết định (gián tiếp)",
-    "Chỉ thị", "Quy chế", "Quy định", "Thông cáo", "Thông báo", "Hướng dẫn",
-    "Chương trình", "Kế hoạch", "Phương án", "Đề án", "Dự án", "Báo cáo",
-    "Biên bản", "Tờ trình", "Hợp đồng", "Công văn", "Công điện", "Bản ghi nhớ",
-    "Bản thỏa thuận", "Giấy ủy quyền", "Giấy mời", "Giấy giới thiệu",
-    "Giấy nghỉ phép", "Phiếu gửi", "Phiếu chuyển", "Phiếu báo", "Thư công",
-    "Văn bản kèm theo quyết định"
+    "Tự động nhận diện (Tải hàng loạt)",
+    "Nghị quyết", "Quyết định", "Chỉ thị", "Quy chế", "Quy định", 
+    "Hướng dẫn", "Thông cáo", "Thông báo", "Báo cáo", "Biên bản", 
+    "Tờ trình", "Chương trình", "Kế hoạch", "Phương án", "Đề án", 
+    "Dự án", "Công văn", "Công điện", "Bản ghi nhớ", "Bản thỏa thuận", 
+    "Hợp đồng", "Giấy ủy quyền", "Giấy mời", "Giấy giới thiệu", 
+    "Giấy nghỉ phép", "Phiếu gửi", "Phiếu chuyển", "Phiếu báo", "Thư công"
 ]
 
 SOURCE_SCOPE_OPTIONS = {
@@ -44,38 +33,19 @@ SOURCE_SCOPE_OPTIONS = {
     "Chỉ nguồn hệ thống/mẫu": "system",
     "Chỉ tài liệu upload": "user_upload",
 }
-SOURCE_KIND_LABELS = {
-    "system": "Hệ thống/mẫu",
-    "user_upload": "Upload riêng",
-}
-
+SOURCE_KIND_LABELS = {"system": "Hệ thống/mẫu", "user_upload": "Upload riêng"}
 
 @st.cache_data
-def get_base_documents() -> list[Document]:
-    return load_documents(DATA_PATH)
-
-
+def get_base_documents() -> list[Document]: return load_documents(DATA_PATH)
 @st.cache_data
-def get_sprint2_sample_documents() -> list[Document]:
-    return load_documents(SPRINT2_SAMPLE_PATH)
-
-
+def get_sprint2_sample_documents() -> list[Document]: return load_documents(SPRINT2_SAMPLE_PATH)
 @st.cache_data
-def get_retrieval_test_cases():
-    return load_retrieval_test_cases(RETRIEVAL_TEST_CASES_PATH)
-
-
+def get_retrieval_test_cases(): return load_retrieval_test_cases(RETRIEVAL_TEST_CASES_PATH)
 @st.cache_data
-def get_generation_test_cases():
-    return load_generation_test_cases(GENERATION_TEST_CASES_PATH)
-
+def get_generation_test_cases(): return load_generation_test_cases(GENERATION_TEST_CASES_PATH)
 
 def main() -> None:
-    st.set_page_config(
-        page_title="AI soạn thảo văn bản hành chính",
-        layout="wide",
-    )
-
+    st.set_page_config(page_title="AI soạn thảo văn bản hành chính", layout="wide")
     _ensure_knowledge_base()
     chunks = _current_chunks()
     llm_config = load_llm_config(BASE_DIR)
@@ -85,15 +55,14 @@ def main() -> None:
 
     with st.sidebar:
         st.header("Cấu hình")
-        doc_type = st.selectbox("Loại văn bản", DOCUMENT_TYPES)
-        top_k = st.slider("Số tài liệu truy xuất", min_value=1, max_value=8, value=3)
+        doc_type = st.selectbox("Loại văn bản", DOCUMENT_TYPES[1:])
+        top_k = st.slider("Số tài liệu truy xuất", 1, 8, 3)
         source_scope_label = st.selectbox("Nguồn dùng khi soạn", list(SOURCE_SCOPE_OPTIONS))
         source_scope = SOURCE_SCOPE_OPTIONS[source_scope_label]
         active_chunks = _filter_chunks_by_source_scope(chunks, source_scope)
         st.divider()
         st.metric("Chunk trong kho", len(chunks))
         st.metric("Chunk đang dùng", len(active_chunks))
-        st.metric("Tài liệu gốc", len(_parent_ids(chunks)))
         st.divider()
         st.subheader("LLM")
         st.caption(describe_llm_status(llm_config))
@@ -107,527 +76,165 @@ def main() -> None:
 
     with draft_tab:
         _render_drafting_tab(
-            documents=chunks,
-            active_documents=active_chunks,
-            doc_type=doc_type,
-            top_k=top_k,
-            llm_config=llm_config,
-            source_scope_label=source_scope_label,
-            agency_parent=agency_parent,
-            agency_name=agency_name,
-            place_name=place_name,
+            documents=chunks, active_documents=active_chunks, doc_type=doc_type, top_k=top_k, 
+            llm_config=llm_config, source_scope_label=source_scope_label,
+            agency_parent=agency_parent, agency_name=agency_name, place_name=place_name,
         )
 
     with knowledge_tab:
         _render_knowledge_tab(source_scope=source_scope, source_scope_label=source_scope_label)
 
-
 def _ensure_knowledge_base() -> None:
-    if "knowledge_chunks" in st.session_state:
-        return
-
-    base_chunks = build_chunks(get_base_documents())
-    st.session_state["knowledge_chunks"] = base_chunks
-    st.session_state["import_log"] = [
-        f"Đã nạp {len(base_chunks)} chunk nền từ data/admin_docs.json."
-    ]
-
-
-def _current_chunks() -> list[Document]:
-    return st.session_state.get("knowledge_chunks", [])
+    if "knowledge_chunks" not in st.session_state:
+        base_chunks = build_chunks(get_base_documents())
+        
+        # --- SỬA Ở ĐÂY: Đọc thêm dữ liệu cũ từ ổ cứng lên ---
+        user_chunks = _load_user_chunks_from_disk()
+        
+        st.session_state["knowledge_chunks"] = base_chunks + user_chunks
+        st.session_state["import_log"] = [f"Đã nạp {len(base_chunks)} chunk nền."]
 
 
-def _render_drafting_tab(
-    *,
-    documents: list[Document],
-    active_documents: list[Document],
-    doc_type: str,
-    top_k: int,
-    llm_config: LLMConfig,
-    source_scope_label: str,
-    agency_parent: str,
-    agency_name: str,
-    place_name: str,
-) -> None:
-    st.caption(
-        f"Luồng Sprint 7: nhập yêu cầu -> truy xuất ({source_scope_label}) -> sinh nháp -> rà soát -> tải TXT/DOCX."
-    )
-    query = st.text_area(
-        "Yêu cầu soạn thảo",
-        height=150,
-        placeholder="Ví dụ: soạn công văn đề nghị phối hợp tổ chức buổi tập huấn chuyển đổi số cho cán bộ văn phòng",
-    )
+def _current_chunks() -> list[Document]: return st.session_state.get("knowledge_chunks", [])
 
-    submitted = st.button("Tạo bản nháp", type="primary", use_container_width=True)
-
-    if submitted:
-        if not query.strip():
-            st.warning("Vui lòng nhập yêu cầu soạn thảo trước khi tạo bản nháp.")
-            return
-        if documents and not active_documents:
-            st.warning(
-                f"Không có tài liệu trong phạm vi `{source_scope_label}`. Hãy đổi bộ lọc nguồn hoặc nạp thêm tài liệu."
-            )
-            return
+def _render_drafting_tab(*, documents, active_documents, doc_type, top_k, llm_config, source_scope_label, agency_parent, agency_name, place_name) -> None:
+    query = st.text_area("Yêu cầu soạn thảo", height=150, placeholder="Ví dụ: soạn công văn...")
+    if st.button("Tạo bản nháp", type="primary", use_container_width=True):
+        if not query.strip(): return st.warning("Vui lòng nhập yêu cầu.")
+        if documents and not active_documents: return st.warning("Không có tài liệu trong phạm vi lọc.")
 
         results = retrieve(query, active_documents, doc_type=doc_type, top_k=top_k)
-        draft_result = generate_draft(
-            request=query,
-            doc_type=doc_type,
-            search_results=results,
-            config=llm_config,
-        )
+        draft_result = generate_draft(request=query, doc_type=doc_type, search_results=results, config=llm_config)
 
         left, right = st.columns([2, 1])
-        quality_report = evaluate_draft(
-            draft=draft_result.text,
-            doc_type=doc_type,
-            search_results=results,
-        )
+        quality_report = evaluate_draft(draft=draft_result.text, doc_type=doc_type, search_results=results)
+        
         with left:
             st.subheader("Bản nháp")
-            if draft_result.used_llm:
-                st.success(
-                    f"Đã sinh bằng {draft_result.provider.upper()} API ({draft_result.model})."
-                )
-            elif draft_result.fallback_used and draft_result.error:
-                st.warning(draft_result.error)
+            if draft_result.used_llm: st.success(f"Sinh bằng {draft_result.provider.upper()} API.")
             st.text_area("Nội dung sinh ra", value=draft_result.text, height=560)
-            docx_bytes = export_draft_to_docx(
-                draft=draft_result.text,
-                doc_type=doc_type,
-                agency_parent=agency_parent,
-                agency_name=agency_name,
-                place_name=place_name,
-            )
-            download_txt_col, download_docx_col = st.columns(2)
-            with download_txt_col:
-                st.download_button(
-                    "Tải bản nháp TXT",
-                    data=draft_result.text.encode("utf-8"),
-                    file_name=_txt_file_name(doc_type),
-                    mime="text/plain; charset=utf-8",
-                    use_container_width=True,
-                )
-            with download_docx_col:
-                st.download_button(
-                    "Tải bản nháp DOCX chuẩn thể thức",
-                    data=docx_bytes,
-                    file_name=_docx_file_name(doc_type),
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    use_container_width=True,
-                )
-            st.caption(
-                "DOCX dùng khổ A4, Times New Roman, lề trái 30 mm, lề phải 15 mm, lề trên/dưới 20 mm, cỡ chữ nội dung 13, giãn dòng 1.15 và số trang căn giữa ở lề trên, ẩn trang đầu."
-            )
-
+            
+            docx_bytes = export_draft_to_docx(draft=draft_result.text, doc_type=doc_type, agency_parent=agency_parent, agency_name=agency_name, place_name=place_name)
+            d1, d2 = st.columns(2)
+            d1.download_button("Tải bản nháp TXT", data=draft_result.text.encode("utf-8"), file_name=f"{doc_type}.txt", mime="text/plain", use_container_width=True)
+            d2.download_button("Tải bản nháp DOCX chuẩn", data=docx_bytes, file_name=f"{doc_type}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", use_container_width=True)
+            
         with right:
             st.subheader("Nguồn truy xuất")
             _render_search_results(results)
-            st.warning(
-                "Bản nháp chỉ dùng để hỗ trợ. Cần con người rà soát căn cứ pháp lý, thể thức và thẩm quyền ban hành."
-            )
-
         _render_quality_report(quality_report)
-    else:
-        st.info("Chưa có bản nháp.")
+    else: st.info("Chưa có bản nháp.")
 
-
-def _render_knowledge_tab(*, source_scope: str | None, source_scope_label: str) -> None:
+def _render_knowledge_tab(*, source_scope, source_scope_label) -> None:
     st.subheader("Nạp và kiểm tra kho tri thức")
-
     chunks = _current_chunks()
-    col_a, col_b, col_c, col_d = st.columns(4)
-    col_a.metric("Số lượng Chunk", len(chunks))
-    col_b.metric("Tài liệu gốc", len(_parent_ids(chunks)))
-    col_c.metric("Upload riêng", len(_filter_chunks_by_source_scope(chunks, "user_upload")))
-    col_d.metric("Loại văn bản", len({document.doc_type for document in chunks}))
-
-    action_col, delete_upload_col, reset_col = st.columns([2, 1, 1])
-    with action_col:
-        if st.button("Nạp tài liệu mẫu hệ thống", type="primary"):
-            sample_chunks = build_chunks(get_sprint2_sample_documents())
-            added = _merge_chunks(sample_chunks)
-            st.success(f"Đã nạp thêm {added} chunk từ bộ dữ liệu mẫu.")
-
-    with delete_upload_col:
-        if st.button("Xóa dữ liệu upload"):
-            removed = _delete_user_upload_chunks()
-            st.success(f"Đã xóa {removed} chunk upload riêng khỏi phiên làm việc.")
-
-    with reset_col:
-        if st.button("Reset kho tri thức"):
-            base_chunks = build_chunks(get_base_documents())
-            st.session_state["knowledge_chunks"] = base_chunks
-            st.session_state["import_log"] = [
-                f"Đã reset về {len(base_chunks)} chunk nền từ hệ thống."
-            ]
-            st.success("Đã reset kho tri thức về mặc định.")
-
-    # CẬP NHẬT: Hỗ trợ PDF và DOCX ngay tại giao diện Upload
-    with st.expander("Upload tài liệu nghiệp vụ (PDF, DOCX, TXT, MD, JSON)", expanded=True):
-        st.info(
-            "Hệ thống hiện đã hỗ trợ trích xuất nội dung trực tiếp từ file Word (.docx) và PDF (.pdf) "
-            "để phục vụ việc soạn thảo dựa trên tài liệu thực tế của đơn vị."
-        )
-        
-        upload_doc_type = st.selectbox("Phân loại mặc định cho tài liệu nạp", DOCUMENT_TYPES)
-        
-        chunk_size = st.slider("Số từ tối đa mỗi đoạn (Chunk size)", 60, 400, 150, step=10)
-        overlap = st.slider("Số từ gối đầu (Overlap)", 0, 100, 30, step=5)
-        
-        uploaded_files = st.file_uploader(
-            "Kéo thả file PDF, Word hoặc Text vào đây",
-            type=["txt", "md", "json", "pdf", "docx"], # Đã thêm pdf và docx
-            accept_multiple_files=True,
-        )
-
-        if st.button("Tiến hành nạp vào kho tri thức"):
-            if not uploaded_files:
-                st.warning("Vui lòng chọn ít nhất một file trước khi nạp.")
-            else:
-                # Lưu ý: Hàm _parse_uploaded_files cần được cập nhật 
-                # logic extract_text_from_binary như đã hướng dẫn trước đó
-                added_documents, errors = _parse_uploaded_files(
-                    uploaded_files=uploaded_files,
-                    default_doc_type=upload_doc_type,
-                )
-                uploaded_chunks = build_chunks(
-                    added_documents,
-                    chunk_size_words=chunk_size,
-                    overlap_words=overlap,
-                )
-                added = _merge_chunks(uploaded_chunks)
-
-                if added:
-                    st.success(
-                        f"Thành công: Đã nạp {added} đoạn nội dung từ {len(added_documents)} tài liệu mới."
-                    )
-                if errors:
-                    for err in errors:
-                        st.error(err)
-
-    st.divider()
-    st.subheader("Dữ liệu hiện có trong kho")
-    rows = _chunk_rows(_current_chunks())
-    st.dataframe(rows, use_container_width=True, hide_index=True)
-
-    st.subheader("Kiểm tra khả năng truy xuất")
-    st.caption(f"Kiểm tra xem AI sẽ tìm thấy gì với nguồn: {source_scope_label}.")
-    preview_query = st.text_input(
-        "Nhập câu hỏi hoặc nội dung cần tìm trong kho tri thức",
-        placeholder="Ví dụ: quy định về mức chi khen thưởng năm 2026",
-    )
-    preview_doc_type = st.selectbox(
-        "Lọc theo loại văn bản",
-        ["Tất cả"] + DOCUMENT_TYPES,
-    )
-    if preview_query.strip():
-        doc_type_filter = None if preview_doc_type == "Tất cả" else preview_doc_type
-        results = retrieve(
-            preview_query,
-            _filter_chunks_by_source_scope(_current_chunks(), source_scope),
-            doc_type=doc_type_filter,
-            top_k=5,
-        )
-        _render_search_results(results)
-
-    # Các bảng test bên dưới giữ nguyên
-    _render_retrieval_test_panel()
-    _render_generation_test_panel()
-    _render_quality_test_panel()
-
-    with st.expander("Lịch sử nạp dữ liệu"):
-        for line in st.session_state.get("import_log", []):
-            st.write(f"- {line}")
-
-def extract_text_from_binary(file_bytes: bytes, filename: str) -> str:
-    """Hàm hỗ trợ trích xuất văn bản từ nhiều định dạng file khác nhau"""
-    extension = filename.split('.')[-1].lower()
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Chunk", len(chunks))
+    c2.metric("Tài liệu gốc", len({d.parent_id or d.id for d in chunks}))
+    c3.metric("Upload riêng", len(_filter_chunks_by_source_scope(chunks, "user_upload")))
     
-    try:
-        # 1. Xử lý file WORD (.docx)
-        if extension == 'docx':
-            doc = docx.Document(io.BytesIO(file_bytes))
-            return "\n".join([para.text for para in doc.paragraphs])
-        
-        # 2. Xử lý file PDF (.pdf)
-        elif extension == 'pdf':
-            reader = PdfReader(io.BytesIO(file_bytes))
-            text = ""
-            for page in reader.pages:
-                extracted = page.extract_text()
-                if extracted:
-                    text += extracted + "\n"
-            return text
-        
-        # 3. Mặc định xử lý các file văn bản (txt, md, json)
-        else:
-            return file_bytes.decode("utf-8")
-            
-    except Exception as e:
-        raise ValueError(f"Lỗi khi đọc nội dung file: {str(e)}")
+    a1, a2, a3 = st.columns([2, 1, 1])
+    with a1:
+        if st.button("Nạp tài liệu mẫu", type="primary"):
+            _merge_chunks(build_chunks(get_sprint2_sample_documents()))
+    with a2:
+        if st.button("Xóa upload riêng"): _delete_user_upload_chunks()
+    with a3:
+        if st.button("Reset kho"): _ensure_knowledge_base()
 
-def _parse_uploaded_files(
-    *,
-    uploaded_files,
-    default_doc_type: str,
-) -> tuple[list[Document], list[str]]:
-    documents: list[Document] = []
-    errors: list[str] = []
+    with st.expander("Upload tài liệu nghiệp vụ (PDF, DOCX, TXT, MD, JSON)", expanded=True):
+        upload_doc_type = st.selectbox("Loại mặc định cho file tải lên", DOCUMENT_TYPES)
+        chunk_size = st.slider("Số từ tối đa mỗi chunk", 60, 400, 150, step=10)
+        uploaded_files = st.file_uploader("Kéo thả file vào đây", type=["txt", "md", "json", "pdf", "docx"], accept_multiple_files=True)
+        if st.button("Nạp file đã chọn") and uploaded_files:
+            added_docs, errors = _parse_uploaded_files(uploaded_files=uploaded_files, default_doc_type=upload_doc_type)
+            added = _merge_chunks(build_chunks(added_docs, chunk_size_words=chunk_size, overlap_words=30))
+            if added: st.success(f"Nạp thành công {added} đoạn từ {len(added_docs)} tài liệu.")
+            if errors: st.error("\n".join(errors))
 
+    st.dataframe(_chunk_rows(chunks), use_container_width=True, hide_index=True)
+
+def _parse_uploaded_files(*, uploaded_files, default_doc_type) -> tuple[list[Document], list[str]]:
+    documents, errors = [], []
     for uploaded_file in uploaded_files:
         try:
-            # CẬP NHẬT: Thay decode_file_bytes bằng extract_text_from_binary
-            # để xử lý được cả PDF và DOCX
             text = extract_text_from_binary(uploaded_file.getvalue(), uploaded_file.name)
-            
-            # Sau khi có text, đưa vào bộ parse chuẩn của hệ thống
-            parsed = parse_documents_from_text(
-                filename=uploaded_file.name,
-                text=text,
-                default_doc_type=default_doc_type,
-                source_kind="user_upload",
-            )
+            parsed = parse_documents_from_text(filename=uploaded_file.name, text=text, default_doc_type=default_doc_type, source_kind="user_upload")
             documents.extend(parsed)
-            
         except Exception as error:
-            # Bắt mọi lỗi từ định dạng file đến lỗi giải mã
-            errors.append(f"Tài liệu '{uploaded_file.name}' bị lỗi: {str(error)}")
-
+            errors.append(f"{uploaded_file.name}: {str(error)}")
     return documents, errors
 
+def _merge_chunks(new_chunks):
+    current = _current_chunks()
+    existing_ids = {d.id for d in current}
+    unique = [d for d in new_chunks if d.id not in existing_ids]
+    
+    updated_chunks = current + unique
+    st.session_state["knowledge_chunks"] = updated_chunks
+    
+    # --- SỬA Ở ĐÂY: Lưu file xuống ổ cứng ngay khi nạp thành công ---
+    _save_user_chunks_to_disk(updated_chunks)
+    
+    return len(unique)
 
-def _merge_chunks(new_chunks: list[Document]) -> int:
-    current_chunks = _current_chunks()
-    existing_ids = {document.id for document in current_chunks}
-    unique_new_chunks = [
-        document for document in new_chunks if document.id not in existing_ids
-    ]
+def _delete_user_upload_chunks():
+    kept = [d for d in _current_chunks() if d.source_kind != "user_upload"]
+    st.session_state["knowledge_chunks"] = kept
+    
+    # --- SỬA Ở ĐÂY: Xóa dữ liệu trên Web xong thì cũng phải xóa dưới ổ cứng ---
+    _save_user_chunks_to_disk(kept)
+    
+def _render_search_results(results):
+    for r in results:
+        with st.expander(f"{r.document.id} - Điểm {r.score:.3f}"):
+            st.write(r.document.content)
 
-    st.session_state["knowledge_chunks"] = current_chunks + unique_new_chunks
-    st.session_state.setdefault("import_log", []).append(
-        f"Đã nạp {len(unique_new_chunks)} chunk mới, bỏ qua {len(new_chunks) - len(unique_new_chunks)} chunk trùng."
-    )
-    return len(unique_new_chunks)
-
-
-def _delete_user_upload_chunks() -> int:
-    current_chunks = _current_chunks()
-    kept_chunks = [
-        document for document in current_chunks if document.source_kind != "user_upload"
-    ]
-    removed = len(current_chunks) - len(kept_chunks)
-    st.session_state["knowledge_chunks"] = kept_chunks
-    st.session_state.setdefault("import_log", []).append(
-        f"Đã xóa {removed} chunk upload riêng khỏi kho tri thức phiên hiện tại."
-    )
-    return removed
-
-
-def _render_retrieval_test_panel() -> None:
-    st.subheader("Bộ test truy xuất Sprint 3")
-    test_cases = get_retrieval_test_cases()
-    st.caption(
-        "Các test này kiểm tra kết quả top 3 của BM25 retriever trên bộ dữ liệu mẫu."
-    )
-
-    with st.expander("Danh sách test case"):
-        st.dataframe(
-            [
-                {
-                    "id": case.id,
-                    "query": case.query,
-                    "doc_type": case.doc_type or "Không lọc",
-                    "expected": case.expected_parent_id,
-                    "description": case.description,
-                }
-                for case in test_cases
-            ],
-            use_container_width=True,
-            hide_index=True,
-        )
-
-    if st.button("Chạy test truy xuất Sprint 3"):
-        rows = run_retrieval_tests(test_cases, _current_chunks(), top_k=3)
-        passed_count = sum(1 for row in rows if row["passed"])
-        total_count = len(rows)
-
-        if passed_count == total_count:
-            st.success(f"Đạt {passed_count}/{total_count} test truy xuất.")
-        else:
-            st.warning(
-                f"Đạt {passed_count}/{total_count} test. Nếu chưa nạp dữ liệu mẫu Sprint 2/3/4, hãy nạp trước rồi chạy lại."
-            )
-
-        st.dataframe(rows, use_container_width=True, hide_index=True)
-
-
-def _render_generation_test_panel() -> None:
-    st.subheader("Bộ test generator Sprint 4")
-    test_cases = get_generation_test_cases()
-    st.caption(
-        "Các test này kiểm tra template riêng cho từng loại văn bản và ca không có nguồn."
-    )
-
-    with st.expander("Danh sách test generator"):
-        st.dataframe(
-            [
-                {
-                    "id": case.id,
-                    "query": case.query,
-                    "doc_type": case.doc_type,
-                    "description": case.description,
-                }
-                for case in test_cases
-            ],
-            use_container_width=True,
-            hide_index=True,
-        )
-
-    if st.button("Chạy test generator Sprint 4"):
-        rows = run_generation_tests(test_cases, _current_chunks(), top_k=3)
-        passed_count = sum(1 for row in rows if row["passed"])
-        total_count = len(rows)
-
-        if passed_count == total_count:
-            st.success(f"Đạt {passed_count}/{total_count} test generator.")
-        else:
-            st.warning(
-                f"Đạt {passed_count}/{total_count} test. Nếu chưa nạp dữ liệu mẫu Sprint 2/3/4, hãy nạp trước rồi chạy lại."
-            )
-
-        st.dataframe(rows, use_container_width=True, hide_index=True)
-
-
-def _render_quality_test_panel() -> None:
-    st.subheader("Bộ test chất lượng Sprint 6")
-    test_cases = get_generation_test_cases()
-    st.caption(
-        "Các test này kiểm tra checklist thể thức, citation và rủi ro thiếu nguồn."
-    )
-
-    if st.button("Chạy test chất lượng Sprint 6"):
-        rows = run_quality_tests(test_cases, _current_chunks(), top_k=3)
-        passed_count = sum(1 for row in rows if row["passed"])
-        total_count = len(rows)
-
-        if passed_count == total_count:
-            st.success(f"Đạt {passed_count}/{total_count} test chất lượng.")
-        else:
-            st.warning(
-                f"Đạt {passed_count}/{total_count} test. Hãy nạp dữ liệu mẫu Sprint 2/3/4 trước khi chạy."
-            )
-
-        st.dataframe(rows, use_container_width=True, hide_index=True)
-
-
-def _render_quality_report(report) -> None:
-    st.subheader("Checklist chất lượng")
-    metric_a, metric_b = st.columns(2)
-    metric_a.metric("Điểm chất lượng", f"{report.score}/100")
-    metric_b.metric("Mức rủi ro", report.risk_level)
-
-    if report.risk_level == "Cao":
-        st.error("Rủi ro cao: cần bổ sung nguồn hoặc rà soát kỹ trước khi sử dụng.")
-    elif report.risk_level == "Trung bình":
-        st.warning("Rủi ro trung bình: cần kiểm tra các mục chưa đạt.")
-    else:
-        st.success("Rủi ro thấp: vẫn cần con người rà soát lần cuối.")
-
+def _render_quality_report(report):
+    st.subheader("Chất lượng bản nháp")
+    st.metric("Điểm", f"{report.score}/100")
     st.dataframe(report_to_rows(report), use_container_width=True, hide_index=True)
 
+def _chunk_rows(chunks):
+    return [{"id": d.id, "Loại": d.doc_type, "Nguồn": d.source, "Nội dung": d.content[:100]} for d in chunks]
 
-def _render_search_results(results) -> None:
-    if not results:
-        st.warning("Chưa có nguồn đủ phù hợp trong kho tri thức. Cần bổ sung dữ liệu trước khi sinh nội dung.")
-        return
+def _filter_chunks_by_source_scope(chunks, scope):
+    if not scope: return chunks
+    return [d for d in chunks if d.source_kind == scope]
 
-    for result in results:
-        document = result.document
-        chunk_label = (
-            f"chunk {document.chunk_index}/{document.total_chunks}"
-            if document.chunk_index and document.total_chunks
-            else "toàn văn"
-        )
-        with st.expander(f"{document.id} · {document.title}", expanded=True):
-            st.caption(
-                f"{_source_kind_label(document.source_kind)} · {document.doc_type} · {chunk_label} · điểm BM25 {result.score:.3f}"
-            )
-            st.write(document.content)
-            st.caption(f"Nguồn: {document.source}")
-            if result.matched_terms:
-                st.caption(f"Từ khóa khớp: {', '.join(result.matched_terms)}")
+def _save_user_chunks_to_disk(chunks):
+    """Lưu toàn bộ các file người dùng đã nạp xuống ổ cứng (vào user_docs.json)"""
+    # Chỉ lọc và lưu những file người dùng upload riêng
+    user_chunks = [c for c in chunks if c.source_kind == "user_upload"]
+    data_to_save = []
+    
+    for c in user_chunks:
+        data_to_save.append({
+            "id": c.id,
+            "title": c.title,
+            "doc_type": c.doc_type,
+            "source": c.source,
+            "content": c.content,
+            "source_kind": c.source_kind,
+            "parent_id": getattr(c, "parent_id", None),
+            "chunk_index": getattr(c, "chunk_index", None),
+            "total_chunks": getattr(c, "total_chunks", None)
+        })
+        
+    with open(USER_DATA_PATH, "w", encoding="utf-8") as f:
+        json.dump(data_to_save, f, ensure_ascii=False, indent=2)
 
-
-def _chunk_rows(chunks: list[Document]) -> list[dict[str, object]]:
-    rows: list[dict[str, object]] = []
-    for document in chunks:
-        rows.append(
-            {
-                "id": document.id,
-                "parent_id": document.parent_id,
-                "doc_type": document.doc_type,
-                "source_kind": _source_kind_label(document.source_kind),
-                "title": document.title,
-                "source": document.source,
-                "chunk": _chunk_label(document),
-                "words": len(document.content.split()),
-                "preview": document.content[:160],
-            }
-        )
-
-    return rows
-
-
-def _chunk_label(document: Document) -> str:
-    if document.chunk_index and document.total_chunks:
-        return f"{document.chunk_index}/{document.total_chunks}"
-
-    return "-"
-
-
-def _parent_ids(chunks: list[Document]) -> set[str]:
-    return {document.parent_id or document.id for document in chunks}
-
-
-def _filter_chunks_by_source_scope(
-    chunks: list[Document],
-    source_scope: str | None,
-) -> list[Document]:
-    if source_scope is None:
-        return chunks
-
-    return [document for document in chunks if document.source_kind == source_scope]
-
-
-def _source_kind_label(source_kind: str) -> str:
-    return SOURCE_KIND_LABELS.get(source_kind, source_kind or "Không rõ")
-
-
-def _get_safe_filename(doc_type: str) -> str:
-    SAFE_FILENAMES = {
-        "Nghị quyết (cá biệt)": "nghi-quyet",
-        "Quyết định (trực tiếp)": "quyet-dinh-truc-tiep",
-        "Quyết định (gián tiếp)": "quyet-dinh-gian-tiep",
-        "Chỉ thị": "chi-thi", "Quy chế": "quy-che", "Quy định": "quy-dinh",
-        "Thông cáo": "thong-cao", "Thông báo": "thong-bao", "Hướng dẫn": "huong-dan",
-        "Chương trình": "chuong-trinh", "Kế hoạch": "ke-hoach", "Phương án": "phuong-an",
-        "Đề án": "de-an", "Dự án": "du-an", "Báo cáo": "bao-cao",
-        "Biên bản": "bien-ban", "Tờ trình": "to-trinh", "Hợp đồng": "hop-dong",
-        "Công văn": "cong-van", "Công điện": "cong-dien", "Bản ghi nhớ": "ban-ghi-nho",
-        "Bản thỏa thuận": "ban-thoa-thuan", "Giấy ủy quyền": "giay-uy-quyen",
-        "Giấy mời": "giay-moi", "Giấy giới thiệu": "giay-gioi-thieu",
-        "Giấy nghỉ phép": "giay-nghi-phep", "Phiếu gửi": "phieu-gui",
-        "Phiếu chuyển": "phieu-chuyen", "Phiếu báo": "phieu-bao",
-        "Thư công": "thu-cong", "Văn bản kèm theo quyết định": "van-ban-kem-theo",
-    }
-    return SAFE_FILENAMES.get(doc_type, "van-ban")
-
-def _docx_file_name(doc_type: str) -> str:
-    return f"ban-nhap-{_get_safe_filename(doc_type)}.docx"
-
-def _txt_file_name(doc_type: str) -> str:
-    return f"ban-nhap-{_get_safe_filename(doc_type)}.txt"
+def _load_user_chunks_from_disk():
+    """Khôi phục dữ liệu từ ổ cứng lên lại RAM khi F5"""
+    if not USER_DATA_PATH.exists():
+        return []
+    try:
+        with open(USER_DATA_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return [Document(**item) for item in data]
+    except Exception as e:
+        print(f"Lỗi khôi phục Database: {e}")
+        return []
+    
 if __name__ == "__main__":
     main()
