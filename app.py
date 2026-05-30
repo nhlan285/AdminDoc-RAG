@@ -30,6 +30,7 @@ GENERATION_TEST_CASES_PATH = BASE_DIR / "data" / "generation_test_cases.json"
 EXTRACTION_TEST_CASES_PATH = BASE_DIR / "data" / "extraction_test_cases.json"
 USER_DATA_PATH = BASE_DIR / "data" / "user_docs.local.json"
 TEMPLATE_DIR = BASE_DIR / "data" / "templates"
+PROCESSED_DIR = BASE_DIR / "data" / "processed"
 KNOWLEDGE_DB_PATH = BASE_DIR / "data" / "knowledge.sqlite"
 
 DOCUMENT_TYPES = [
@@ -490,6 +491,19 @@ def get_template_documents() -> list[Document]:
             )
         )
     return documents
+
+@st.cache_data
+def get_processed_documents() -> list[Document]:
+    documents: list[Document] = []
+    if not PROCESSED_DIR.exists():
+        return documents
+    for path in sorted(PROCESSED_DIR.glob("*.json")):
+        try:
+            documents.extend(load_documents(path))
+        except Exception:
+            continue
+    return documents
+
 @st.cache_data
 def get_retrieval_test_cases(): return load_retrieval_test_cases(RETRIEVAL_TEST_CASES_PATH)
 @st.cache_data
@@ -584,7 +598,10 @@ def _ensure_knowledge_base() -> None:
 
 def _reset_knowledge_base() -> None:
     base_chunks = build_chunks(
-        get_base_documents() + get_sprint2_sample_documents() + get_template_documents()
+        get_base_documents()
+        + get_sprint2_sample_documents()
+        + get_template_documents()
+        + get_processed_documents()
     )
     user_chunks = _load_user_chunks_from_disk()
     st.session_state["knowledge_chunks"] = base_chunks + user_chunks
@@ -666,7 +683,11 @@ def _render_sources_panel(*, chunks: list[Document], llm_config: LLMConfig) -> d
                     st.error("\n".join(errors))
 
         st.markdown('<div class="section-title">Cấu hình soạn thảo</div>', unsafe_allow_html=True)
-        doc_type = st.selectbox("Loại văn bản", DOCUMENT_TYPES[1:], key="source_doc_type")
+        doc_type = st.selectbox(
+            "Loại dự phòng nếu hệ thống không chắc",
+            DOCUMENT_TYPES[1:],
+            key="source_doc_type",
+        )
         auto_detect_request = st.toggle(
             "Tự động nhận diện yêu cầu",
             value=True,

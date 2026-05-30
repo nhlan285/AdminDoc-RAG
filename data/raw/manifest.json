@@ -7,8 +7,11 @@
       "source_url": "https://congbao.chinhphu.vn/thuoc-tinh-van-ban-so-30-2020-nd-cp-30858?cbid=30246",
       "source_name": "Công báo điện tử Chính phủ",
       "file": "congbao__30-2020-nd-cp__cong-tac-van-thu.pdf",
-      "status": "planned",
-      "notes": "Tải PDF/DOC gốc rồi trích nội dung liên quan thể thức văn bản."
+      "status": "downloaded",
+      "notes": "Tải PDF/DOC gốc rồi trích nội dung liên quan thể thức văn bản.",
+      "error": "HTTPSConnectionPool(host='g7.cdnchinhphu.vn', port=443): Max retries exceeded with url: /api/download/stream?Url=tm-8mq6BhNw0NbrKRhTDAQWsKg3tuqaY0aWypnY78U6M2BY68Ekp0Gvvr483flbRzeMgo69gJDESflr-_x7591-A8whg37JDzYSIK-EHyP5LjBOnUK2Q028EU9hHTpddZip6U6kFx1QKgzy_f9Y45Q~~&file_name=2020_283+%2B+284_30-2020-N%C4%90-CP.pdf (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)')))",
+      "downloaded_file": "data\\raw\\congbao__30-2020-nd-cp__cong-tac-van-thu.pdf",
+      "content_length": 124749
     },
     {
       "id": "QD28-2018-RAW",
@@ -17,8 +20,11 @@
       "source_url": "https://congbao.chinhphu.vn/thuoc-tinh-van-ban-so-28-2018-qd-ttg-26965?cbid=23211",
       "source_name": "Công báo điện tử Chính phủ",
       "file": "congbao__28-2018-qd-ttg__gui-nhan-van-ban-dien-tu.pdf",
-      "status": "planned",
-      "notes": "Dùng làm nguồn ngữ cảnh về văn bản điện tử."
+      "status": "downloaded",
+      "notes": "Dùng làm nguồn ngữ cảnh về văn bản điện tử.",
+      "error": "HTTPSConnectionPool(host='g7.cdnchinhphu.vn', port=443): Max retries exceeded with url: /api/download/stream?Url=tm-8mq6BhNw0NbrKRhTDAQWsKg3tuqaY0aWypnY78U6M2BY68Ekp0Gvvr483flbRfMzDyjjNfsUp1jlBq7WhR7zFexHjtnfqZHz7VeHEFR7Sd8tyUKhUgwiSueVwDwkFlvJaUK8g7oD8WXWaGfNhOw~~&file_name=2018_811+%2B+812_28-2018-Q%C4%90-TTg.pdf (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)')))",
+      "downloaded_file": "data\\raw\\congbao__28-2018-qd-ttg__gui-nhan-van-ban-dien-tu.pdf",
+      "content_length": 23310
     },
     {
       "id": "VPCP-7017-RAW",
@@ -27,8 +33,10 @@
       "source_url": "https://vanban.chinhphu.vn/default.aspx?docid=163703&pageid=27160",
       "source_name": "Cổng văn bản Chính phủ",
       "file": "vanban-chinhphu__7017-vpcp-hc__gui-file-dien-tu-ho-so.txt",
-      "status": "planned",
-      "notes": "Có thể copy phần toàn văn hoặc tải tài liệu đính kèm nếu có."
+      "status": "downloaded",
+      "notes": "Có thể copy phần toàn văn hoặc tải tài liệu đính kèm nếu có.",
+      "downloaded_file": "data\\raw\\vanban-chinhphu__7017-vpcp-hc__gui-file-dien-tu-ho-so.txt",
+      "content_length": 113
     },
     {
       "id": "VPCP-7393-RAW",
@@ -37,8 +45,10 @@
       "source_url": "https://chinhphu.vn/default.aspx?docid=169576&pageid=27160",
       "source_name": "Cổng Thông tin điện tử Chính phủ",
       "file": "chinhphu__7393-vpcp-tccv__bao-cao-cai-cach-tthc.pdf",
-      "status": "planned",
-      "notes": "Dùng làm mẫu công văn thực tế."
+      "status": "downloaded",
+      "notes": "Dùng làm mẫu công văn thực tế.",
+      "downloaded_file": "data\\raw\\VPCP-7393-RAW.txt",
+      "content_length": 94
     }
   ]
 }

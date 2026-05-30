@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
+from src.doc_type_catalog import render_template_draft
 from src.extractor import RequestAnalysis
 from src.retriever import SearchResult
 
@@ -30,6 +31,16 @@ def build_draft(
 
     if not citations:
         return _build_no_source_draft(request=request, doc_type=doc_type, topic=topic, today=today, analysis=analysis)
+
+    catalog_draft = render_template_draft(
+        doc_type=doc_type,
+        topic=topic,
+        today=today,
+        citations=citations,
+        slots=analysis.slots if analysis else {},
+    )
+    if catalog_draft:
+        return catalog_draft
 
     if doc_type == "Thông báo":
         return _form_thong_bao(topic, today, citations)

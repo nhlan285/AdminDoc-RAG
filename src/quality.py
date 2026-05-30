@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from src.doc_type_catalog import required_sections
 from src.retriever import SearchResult
 
 
@@ -200,6 +201,10 @@ def _human_review_check(draft: str) -> QualityCheck:
     )
 
 def _required_fragments(doc_type: str) -> list[str]:
+    catalog_sections = required_sections(doc_type)
+    if catalog_sections:
+        return catalog_sections
+
     # Quốc hiệu & Tiêu ngữ là bắt buộc với hầu hết văn bản hành chính (NĐ 30)
     base_requirements = [
         "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", 

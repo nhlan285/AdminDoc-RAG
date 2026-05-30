@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from src.doc_type_catalog import get_doc_type_spec
 from src.extractor import RequestAnalysis
 from src.generator import build_draft
 from src.retriever import SearchResult
@@ -55,6 +56,18 @@ def generate_draft(
     config: LLMConfig,
     request_analysis: RequestAnalysis | None = None,
 ) -> DraftResult:
+    spec = get_doc_type_spec(doc_type)
+    if spec and spec.template_lines:
+        locked_draft = build_draft(request, doc_type, search_results, analysis=request_analysis)
+        return DraftResult(
+            text=locked_draft,
+            provider="template",
+            model=spec.id,
+            used_llm=False,
+            fallback_used=False,
+            error=None,
+        )
+
     if config.provider == "mock":
         return _mock_result(request, doc_type, search_results, request_analysis)
     if config.provider == "gemini":

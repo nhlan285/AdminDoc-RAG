@@ -4,6 +4,8 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 
+from src.doc_type_catalog import missing_required_slots, route_doc_type
+
 
 @dataclass(frozen=True)
 class RequestAnalysis:
@@ -44,6 +46,11 @@ def analyze_request(request: str, *, default_doc_type: str = "Công văn") -> Re
     text = " ".join(request.strip().split())
     normalized = _normalize_for_rules(text)
     detected_doc_type, intent, confidence = _detect_doc_type(normalized, default_doc_type)
+    routed = route_doc_type(text, default_doc_type=default_doc_type)
+    if routed.confidence >= confidence:
+        detected_doc_type = routed.doc_type
+        intent = routed.intent
+        confidence = routed.confidence
     slots = _extract_common_slots(text, normalized)
 
     if detected_doc_type == "Giấy nghỉ phép":
@@ -54,11 +61,13 @@ def analyze_request(request: str, *, default_doc_type: str = "Công văn") -> Re
         slots.update(_extract_introduction_slots(text, normalized))
 
     slots.setdefault("topic", _extract_topic(text, detected_doc_type))
-    missing_fields = [
+    catalog_missing_fields = missing_required_slots(detected_doc_type, slots)
+    fallback_missing_fields = [
         name
         for name in REQUIRED_SLOTS.get(detected_doc_type, [])
         if not slots.get(name)
     ]
+    missing_fields = catalog_missing_fields or fallback_missing_fields
     retrieval_query = _build_retrieval_query(
         original_request=text,
         detected_doc_type=detected_doc_type,
