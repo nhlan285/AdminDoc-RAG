@@ -1,0 +1,14 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+streamlit.*.log
+data/user_docs.local.json
+data/user_docs.json
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
+data/processed/*.docx
+data/processed/*.pdf
+data/processed/*.json

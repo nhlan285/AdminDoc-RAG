@@ -1,0 +1,37 @@
+[
+  {
+    "id": "CV-MAU-002",
+    "title": "Công văn đề nghị cung cấp số liệu chuyển đổi số",
+    "doc_type": "Công văn",
+    "source": "Bộ dữ liệu mẫu Sprint 2",
+    "content": "Mẫu công văn đề nghị cung cấp số liệu chuyển đổi số. Nội dung chính gồm: đề nghị các đơn vị tổng hợp số liệu chuyển đổi số, báo cáo kết quả triển khai dịch vụ công trực tuyến, hạ tầng số, phần mềm nội bộ và nhân sự phụ trách. Văn bản cần nêu rõ thời hạn gửi số liệu, biểu mẫu kèm theo và đầu mối tiếp nhận."
+  },
+  {
+    "id": "TB-MAU-002",
+    "title": "Thông báo tổ chức tập huấn an toàn thông tin",
+    "doc_type": "Thông báo",
+    "source": "Bộ dữ liệu mẫu Sprint 2",
+    "content": "Mẫu thông báo tổ chức tập huấn an toàn thông tin cho cán bộ, công chức. Nội dung cần có thời gian tập huấn, địa điểm hoặc hình thức trực tuyến, thành phần tham dự, yêu cầu chuẩn bị máy tính, tài khoản và nội dung phản hồi danh sách đăng ký."
+  },
+  {
+    "id": "TT-MAU-002",
+    "title": "Tờ trình phê duyệt kế hoạch triển khai phần mềm nội bộ",
+    "doc_type": "Tờ trình",
+    "source": "Bộ dữ liệu mẫu Sprint 2",
+    "content": "Mẫu tờ trình phê duyệt kế hoạch triển khai phần mềm nội bộ. Phần sự cần thiết nêu nhu cầu chuẩn hóa quy trình xử lý công việc. Phần nội dung đề xuất gồm mục tiêu, phạm vi triển khai, nhiệm vụ chính, nguồn lực, tiến độ và kiến nghị cấp có thẩm quyền xem xét phê duyệt."
+  },
+  {
+    "id": "QD-MAU-002",
+    "title": "Quyết định thành lập tổ triển khai dự án công nghệ thông tin",
+    "doc_type": "Quyết định hành chính đơn giản",
+    "source": "Bộ dữ liệu mẫu Sprint 2",
+    "content": "Mẫu quyết định thành lập tổ triển khai dự án công nghệ thông tin. Nội dung quyết định gồm điều 1 thành lập tổ triển khai và danh sách thành viên, điều 2 giao nhiệm vụ tổ chức thực hiện, phối hợp báo cáo tiến độ, điều 3 hiệu lực thi hành và trách nhiệm của các đơn vị liên quan."
+  },
+  {
+    "id": "CV-MAU-003",
+    "title": "Công văn mời tham dự hội nghị sơ kết",
+    "doc_type": "Công văn",
+    "source": "Bộ dữ liệu mẫu Sprint 2",
+    "content": "Mẫu công văn mời tham dự hội nghị sơ kết. Nội dung cần nêu tên hội nghị sơ kết, thời gian, địa điểm, thành phần được mời, yêu cầu chuẩn bị báo cáo tham luận và thông tin xác nhận tham dự trước thời hạn quy định."
+  }
+]

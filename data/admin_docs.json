@@ -1,0 +1,30 @@
+[
+  {
+    "id": "QD-THE-THUC-001",
+    "title": "Quy định chung về thể thức văn bản hành chính",
+    "doc_type": "Quy định thể thức",
+    "source": "Nghị định 30/2020/NĐ-CP, Phụ lục I",
+    "content": "Văn bản hành chính trình bày trên khổ giấy A4, phông chữ tiếng Việt Times New Roman, bộ mã Unicode, màu đen. Lề trên và lề dưới từ 20 đến 25 mm, lề trái từ 30 đến 35 mm, lề phải từ 15 đến 20 mm. Nội dung văn bản dùng cỡ chữ từ 13 đến 14, khoảng cách giữa các đoạn tối thiểu 6 pt, khoảng cách dòng từ dòng đơn đến 1,5 lines."
+  },
+  {
+    "id": "QD-THE-THUC-002",
+    "title": "Thành phần chính của văn bản hành chính",
+    "doc_type": "Quy định thể thức",
+    "source": "Nghị định 30/2020/NĐ-CP",
+    "content": "Thể thức văn bản hành chính gồm quốc hiệu và tiêu ngữ; tên cơ quan, tổ chức ban hành; số, ký hiệu văn bản; địa danh và thời gian ban hành; tên loại và trích yếu nội dung; nội dung văn bản; chức vụ, họ tên và chữ ký của người có thẩm quyền; nơi nhận và các thành phần khác nếu cần."
+  },
+  {
+    "id": "CV-MAU-001",
+    "title": "Mẫu công văn đề nghị phối hợp cung cấp thông tin",
+    "doc_type": "Công văn",
+    "source": "Bộ mẫu nội bộ dùng cho demo",
+    "content": "Công văn đề nghị phối hợp cần nêu rõ đơn vị gửi, đơn vị nhận, mục đích đề nghị, nội dung cần phối hợp, thời hạn phản hồi và đầu mối tiếp nhận. Phần kính gửi đặt trước nội dung chính. Phần nơi nhận gồm đơn vị nhận chính và lưu văn thư."
+  },
+  {
+    "id": "TB-MAU-001",
+    "title": "Mẫu thông báo kế hoạch làm việc",
+    "doc_type": "Thông báo",
+    "source": "Bộ mẫu nội bộ dùng cho demo",
+    "content": "Thông báo cần nêu rõ mục đích, đối tượng nhận, thời gian, địa điểm, nội dung thực hiện và yêu cầu chuẩn bị. Nội dung thông báo nên trình bày trực tiếp, rõ ràng, tránh thêm căn cứ pháp lý khi không có nguồn kiểm chứng."
+  }
+]

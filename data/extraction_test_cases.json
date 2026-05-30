@@ -1,0 +1,34 @@
+[
+  {
+    "id": "EXT-001",
+    "query": "Xuân Tịnh xin nghỉ 4 ngày vì ốm",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Giấy nghỉ phép",
+    "expected_slots": {
+      "subject_name": "Xuân Tịnh",
+      "leave_days": "4",
+      "reason": "ốm"
+    },
+    "description": "Bóc tách chủ thể, số ngày nghỉ và lý do nghỉ phép."
+  },
+  {
+    "id": "EXT-002",
+    "query": "thông báo tổ chức tập huấn an toàn thông tin",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Thông báo",
+    "expected_slots": {
+      "topic": "tổ chức tập huấn an toàn thông tin"
+    },
+    "description": "Nhận diện thông báo và chủ đề tổ chức tập huấn."
+  },
+  {
+    "id": "EXT-003",
+    "query": "quyết định thành lập tổ triển khai dự án công nghệ thông tin",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Quyết định hành chính đơn giản",
+    "expected_slots": {
+      "topic": "thành lập tổ triển khai dự án công nghệ thông tin"
+    },
+    "description": "Nhận diện quyết định hành chính đơn giản."
+  }
+]
