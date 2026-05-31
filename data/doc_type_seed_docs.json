@@ -1,0 +1,212 @@
+[
+  {
+    "id": "DOC-TYPE-CONG-VAN",
+    "title": "Mẫu phủ truy xuất loại Công văn",
+    "doc_type": "Công văn",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Công văn. Công văn dùng để trao đổi, đề nghị, yêu cầu hoặc phối hợp công việc; thường có trích yếu V/v, phần Kính gửi, nội dung đề nghị, thời hạn phản hồi, nơi nhận và chữ ký."
+  },
+  {
+    "id": "DOC-TYPE-THONG-BAO",
+    "title": "Mẫu phủ truy xuất loại Thông báo",
+    "doc_type": "Thông báo",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Thông báo. Thông báo dùng để truyền đạt thông tin chính thức về thời gian, địa điểm, đối tượng, nội dung thực hiện và trách nhiệm chuẩn bị của các đơn vị, cá nhân liên quan."
+  },
+  {
+    "id": "DOC-TYPE-TO-TRINH",
+    "title": "Mẫu phủ truy xuất loại Tờ trình",
+    "doc_type": "Tờ trình",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Tờ trình. Tờ trình nêu sự cần thiết, căn cứ, nội dung đề xuất, phạm vi, nguồn lực, tiến độ và phần kiến nghị cơ quan có thẩm quyền xem xét phê duyệt."
+  },
+  {
+    "id": "DOC-TYPE-QD-HC-DON-GIAN",
+    "title": "Mẫu phủ truy xuất loại Quyết định hành chính đơn giản",
+    "doc_type": "Quyết định hành chính đơn giản",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Quyết định hành chính đơn giản. Quyết định hành chính đơn giản có tên loại Quyết định, căn cứ ban hành, phần Quyết định, các Điều quy định nội dung, trách nhiệm thi hành, hiệu lực và nơi nhận."
+  },
+  {
+    "id": "DOC-TYPE-NGHI-QUYET",
+    "title": "Mẫu phủ truy xuất loại Nghị quyết",
+    "doc_type": "Nghị quyết",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Nghị quyết. Nghị quyết dùng để thông qua chủ trương, nhiệm vụ hoặc nội dung thuộc thẩm quyền tập thể; thường có phần Quyết nghị, Điều 1, Điều 2 và trách nhiệm tổ chức thực hiện."
+  },
+  {
+    "id": "DOC-TYPE-QUYET-DINH",
+    "title": "Mẫu phủ truy xuất loại Quyết định",
+    "doc_type": "Quyết định",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Quyết định. Quyết định dùng để ban hành, phê duyệt hoặc quy định một nội dung cụ thể; có căn cứ, phần Quyết định, các Điều, hiệu lực thi hành và nơi nhận."
+  },
+  {
+    "id": "DOC-TYPE-CHI-THI",
+    "title": "Mẫu phủ truy xuất loại Chỉ thị",
+    "doc_type": "Chỉ thị",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Chỉ thị. Chỉ thị thể hiện yêu cầu chỉ đạo, đôn đốc, tăng cường thực hiện nhiệm vụ; nội dung cần ngắn gọn, rõ trách nhiệm, thời hạn và đơn vị theo dõi."
+  },
+  {
+    "id": "DOC-TYPE-QUY-CHE",
+    "title": "Mẫu phủ truy xuất loại Quy chế",
+    "doc_type": "Quy chế",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Quy chế. Quy chế quy định nguyên tắc, chế độ làm việc, phối hợp, trách nhiệm và trình tự thực hiện; thường chia thành Chương, Điều và khoản mục rõ ràng."
+  },
+  {
+    "id": "DOC-TYPE-QUY-DINH",
+    "title": "Mẫu phủ truy xuất loại Quy định",
+    "doc_type": "Quy định",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Quy định. Quy định xác lập phạm vi áp dụng, đối tượng áp dụng, nội dung bắt buộc, trách nhiệm thực hiện, kiểm tra và hiệu lực thi hành."
+  },
+  {
+    "id": "DOC-TYPE-HUONG-DAN",
+    "title": "Mẫu phủ truy xuất loại Hướng dẫn",
+    "doc_type": "Hướng dẫn",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Hướng dẫn. Hướng dẫn mô tả mục đích, phạm vi, đối tượng áp dụng, trình tự thao tác, hồ sơ cần chuẩn bị, thời hạn thực hiện và đầu mối hỗ trợ."
+  },
+  {
+    "id": "DOC-TYPE-THONG-CAO",
+    "title": "Mẫu phủ truy xuất loại Thông cáo",
+    "doc_type": "Thông cáo",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Thông cáo. Thông cáo báo chí về hội nghị chuyển đổi số dùng để công bố thông tin chính thức, thường có tiêu đề, nội dung thông cáo, thông tin thời gian địa điểm, thông tin liên hệ và đơn vị phát ngôn."
+  },
+  {
+    "id": "DOC-TYPE-BAO-CAO",
+    "title": "Mẫu phủ truy xuất loại Báo cáo",
+    "doc_type": "Báo cáo",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Báo cáo. Báo cáo trình bày tình hình, kết quả thực hiện, khó khăn vướng mắc, nguyên nhân, kiến nghị và đề xuất nhiệm vụ trong thời gian tiếp theo."
+  },
+  {
+    "id": "DOC-TYPE-BIEN-BAN",
+    "title": "Mẫu phủ truy xuất loại Biên bản",
+    "doc_type": "Biên bản",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Biên bản. Biên bản ghi nhận thời gian, địa điểm, thành phần tham dự, chủ trì, thư ký, nội dung diễn biến, kết luận và chữ ký xác nhận của các bên."
+  },
+  {
+    "id": "DOC-TYPE-CHUONG-TRINH",
+    "title": "Mẫu phủ truy xuất loại Chương trình",
+    "doc_type": "Chương trình",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Chương trình. Chương trình xác định mục tiêu, nội dung công việc, tiến độ, thời gian thực hiện, đơn vị chủ trì, đơn vị phối hợp và tổ chức thực hiện."
+  },
+  {
+    "id": "DOC-TYPE-KE-HOACH",
+    "title": "Mẫu phủ truy xuất loại Kế hoạch",
+    "doc_type": "Kế hoạch",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Kế hoạch. Kế hoạch gồm mục đích yêu cầu, nội dung thực hiện, tiến độ, phân công trách nhiệm, kinh phí, nguồn lực và chế độ báo cáo."
+  },
+  {
+    "id": "DOC-TYPE-PHUONG-AN",
+    "title": "Mẫu phủ truy xuất loại Phương án",
+    "doc_type": "Phương án",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Phương án. Phương án mô tả tình huống, phạm vi, biện pháp xử lý, lực lượng và phương tiện, phân công nhiệm vụ, tiến độ và tổ chức thực hiện."
+  },
+  {
+    "id": "DOC-TYPE-DE-AN",
+    "title": "Mẫu phủ truy xuất loại Đề án",
+    "doc_type": "Đề án",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Đề án. Đề án trình bày sự cần thiết, mục tiêu, phạm vi, nhiệm vụ giải pháp, nguồn lực, tiến độ, hiệu quả dự kiến và kiến nghị phê duyệt."
+  },
+  {
+    "id": "DOC-TYPE-DU-AN",
+    "title": "Mẫu phủ truy xuất loại Dự án",
+    "doc_type": "Dự án",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Dự án. Dự án nêu tên dự án, chủ đầu tư hoặc đơn vị chủ trì, mục tiêu, quy mô, phạm vi, hạng mục thực hiện, kinh phí và tiến độ."
+  },
+  {
+    "id": "DOC-TYPE-CONG-DIEN",
+    "title": "Mẫu phủ truy xuất loại Công điện",
+    "doc_type": "Công điện",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Công điện. Công điện dùng cho yêu cầu khẩn, hỏa tốc; nội dung ngắn gọn, nêu đơn vị nhận, mệnh lệnh hoặc yêu cầu thực hiện, thời hạn báo cáo và trách nhiệm."
+  },
+  {
+    "id": "DOC-TYPE-BAN-GHI-NHO",
+    "title": "Mẫu phủ truy xuất loại Bản ghi nhớ",
+    "doc_type": "Bản ghi nhớ",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Bản ghi nhớ. Bản ghi nhớ ghi nhận mục tiêu hợp tác, phạm vi, nguyên tắc phối hợp, nội dung cam kết sơ bộ, thời hạn và đại diện các bên."
+  },
+  {
+    "id": "DOC-TYPE-BAN-THOA-THUAN",
+    "title": "Mẫu phủ truy xuất loại Bản thỏa thuận",
+    "doc_type": "Bản thỏa thuận",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Bản thỏa thuận. Bản thỏa thuận nêu các bên, nội dung thỏa thuận, quyền và nghĩa vụ, trách nhiệm phối hợp, hiệu lực và phương thức xử lý phát sinh."
+  },
+  {
+    "id": "DOC-TYPE-HOP-DONG",
+    "title": "Mẫu phủ truy xuất loại Hợp đồng",
+    "doc_type": "Hợp đồng",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Hợp đồng. Hợp đồng cung cấp phần mềm quản lý văn bản xác định bên A, bên B, đối tượng hợp đồng, giá trị, tiến độ, quyền nghĩa vụ, nghiệm thu, thanh toán và trách nhiệm của các bên."
+  },
+  {
+    "id": "DOC-TYPE-GIAY-UY-QUYEN",
+    "title": "Mẫu phủ truy xuất loại Giấy ủy quyền",
+    "doc_type": "Giấy ủy quyền",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Giấy ủy quyền. Giấy ủy quyền ghi rõ người ủy quyền, người được ủy quyền, phạm vi ủy quyền, thời hạn ủy quyền, trách nhiệm và chữ ký xác nhận."
+  },
+  {
+    "id": "DOC-TYPE-GIAY-MOI",
+    "title": "Mẫu phủ truy xuất loại Giấy mời",
+    "doc_type": "Giấy mời",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Giấy mời. Giấy mời nêu cơ quan mời, người hoặc đơn vị được mời, nội dung dự họp, thời gian, địa điểm, thành phần chuẩn bị và thông tin liên hệ."
+  },
+  {
+    "id": "DOC-TYPE-GIAY-GIOI-THIEU",
+    "title": "Mẫu phủ truy xuất loại Giấy giới thiệu",
+    "doc_type": "Giấy giới thiệu",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Giấy giới thiệu. Giấy giới thiệu nêu người được giới thiệu, chức vụ, đơn vị công tác, nơi đến làm việc, mục đích làm việc, thời hạn hiệu lực và chữ ký."
+  },
+  {
+    "id": "DOC-TYPE-GIAY-NGHI-PHEP",
+    "title": "Mẫu phủ truy xuất loại Giấy nghỉ phép",
+    "doc_type": "Giấy nghỉ phép",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Giấy nghỉ phép. Giấy nghỉ phép ghi người được nghỉ, chức vụ đơn vị, số ngày nghỉ, ngày bắt đầu, ngày kết thúc, lý do nghỉ và trách nhiệm bàn giao."
+  },
+  {
+    "id": "DOC-TYPE-PHIEU-GUI",
+    "title": "Mẫu phủ truy xuất loại Phiếu gửi",
+    "doc_type": "Phiếu gửi",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Phiếu gửi. Phiếu gửi ghi đơn vị nhận, nội dung hồ sơ tài liệu gửi, số lượng, thời hạn phản hồi, đầu mối liên hệ và chữ ký người lập phiếu."
+  },
+  {
+    "id": "DOC-TYPE-PHIEU-CHUYEN",
+    "title": "Mẫu phủ truy xuất loại Phiếu chuyển",
+    "doc_type": "Phiếu chuyển",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Phiếu chuyển. Phiếu chuyển dùng để chuyển đơn, hồ sơ hoặc tài liệu đến đơn vị có thẩm quyền xử lý; cần nêu nội dung chuyển, nơi nhận, thời hạn và trách nhiệm."
+  },
+  {
+    "id": "DOC-TYPE-PHIEU-BAO",
+    "title": "Mẫu phủ truy xuất loại Phiếu báo",
+    "doc_type": "Phiếu báo",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Phiếu báo. Phiếu báo dùng để báo thông tin, kết quả, thay đổi lịch hoặc nội dung cần biết; cần nêu nơi nhận, nội dung báo, thời gian và đầu mối liên hệ."
+  },
+  {
+    "id": "DOC-TYPE-THU-CONG",
+    "title": "Mẫu phủ truy xuất loại Thư công",
+    "doc_type": "Thư công",
+    "source": "Seed catalog nội bộ cho kiểm thử toàn danh mục",
+    "content": "Mẫu phủ truy xuất loại Thư công. Thư công có hình thức trang trọng, dùng để chúc mừng, cảm ơn, mời, chia buồn hoặc trao đổi công việc đối ngoại; cần đúng đối tượng và văn phong."
+  }
+]

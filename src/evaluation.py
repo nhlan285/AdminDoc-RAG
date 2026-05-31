@@ -78,6 +78,31 @@ class ExtractionTestCase:
         )
 
 
+@dataclass(frozen=True)
+class FormTestCase:
+    id: str
+    query: str
+    default_doc_type: str
+    expected_doc_type: str
+    expected_fragments: list[str]
+    forbidden_fragments: list[str]
+    description: str
+
+    @classmethod
+    def from_dict(cls, item: dict[str, Any]) -> "FormTestCase":
+        return cls(
+            id=str(item["id"]),
+            query=str(item["query"]),
+            default_doc_type=str(item.get("default_doc_type") or "Công văn"),
+            expected_doc_type=str(item["expected_doc_type"]),
+            expected_fragments=[str(value) for value in item["expected_fragments"]],
+            forbidden_fragments=[
+                str(value) for value in item.get("forbidden_fragments", [])
+            ],
+            description=str(item.get("description", "")),
+        )
+
+
 def load_retrieval_test_cases(path: Path) -> list[RetrievalTestCase]:
     with path.open("r", encoding="utf-8") as file:
         raw_cases = json.load(file)
@@ -97,6 +122,13 @@ def load_extraction_test_cases(path: Path) -> list[ExtractionTestCase]:
         raw_cases = json.load(file)
 
     return [ExtractionTestCase.from_dict(item) for item in raw_cases]
+
+
+def load_form_test_cases(path: Path) -> list[FormTestCase]:
+    with path.open("r", encoding="utf-8") as file:
+        raw_cases = json.load(file)
+
+    return [FormTestCase.from_dict(item) for item in raw_cases]
 
 
 def run_extraction_tests(
@@ -260,6 +292,83 @@ def run_quality_tests(
                 "risk_level": report.risk_level,
                 "score": report.score,
                 "failed_checks": ", ".join(failed_checks),
+                "description": test_case.description,
+            }
+        )
+
+    return rows
+
+
+def run_form_tests(
+    test_cases: list[FormTestCase],
+    documents: list[Document],
+    *,
+    top_k: int = 3,
+) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for test_case in test_cases:
+        analysis = analyze_request(
+            test_case.query,
+            default_doc_type=test_case.default_doc_type,
+        )
+        doc_type = analysis.detected_doc_type
+        results = retrieve(
+            analysis.retrieval_query or test_case.query,
+            documents,
+            doc_type=doc_type,
+            top_k=top_k,
+        )
+        draft = build_draft(
+            test_case.query,
+            doc_type,
+            results,
+            analysis=analysis,
+        )
+        report = evaluate_draft(
+            draft=draft,
+            doc_type=doc_type,
+            search_results=results,
+        )
+
+        missing_fragments = [
+            fragment
+            for fragment in test_case.expected_fragments
+            if fragment not in draft
+        ]
+        forbidden_hits = [
+            fragment
+            for fragment in test_case.forbidden_fragments
+            if fragment in draft
+        ]
+        failed_form_checks = [
+            check.name
+            for check in report.checks
+            if not check.passed
+            and check.name
+            in {
+                "Cụm thời gian không lặp",
+                "Định dạng ngày nhập liệu",
+                "Placeholder template",
+                "Ngày kết thúc nghỉ phép",
+            }
+        ]
+        passed = (
+            doc_type == test_case.expected_doc_type
+            and not missing_fragments
+            and not forbidden_hits
+            and not failed_form_checks
+        )
+
+        rows.append(
+            {
+                "id": test_case.id,
+                "passed": passed,
+                "query": test_case.query,
+                "expected_doc_type": test_case.expected_doc_type,
+                "detected_doc_type": doc_type,
+                "missing": ", ".join(missing_fragments),
+                "forbidden_hits": ", ".join(forbidden_hits),
+                "failed_form_checks": ", ".join(failed_form_checks),
                 "description": test_case.description,
             }
         )

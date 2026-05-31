@@ -5,6 +5,7 @@ import unicodedata
 from dataclasses import dataclass, field
 
 from src.doc_type_catalog import missing_required_slots, route_doc_type
+from src.slot_normalizer import normalize_slots
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,8 @@ REQUIRED_SLOTS: dict[str, list[str]] = {
     "Thông báo": ["topic"],
     "Tờ trình": ["topic", "approval_target"],
     "Quyết định hành chính đơn giản": ["topic"],
+    "Công điện": ["recipient", "topic"],
+    "Biên bản": ["event_time", "event_location", "participants"],
 }
 
 
@@ -59,8 +62,17 @@ def analyze_request(request: str, *, default_doc_type: str = "Công văn") -> Re
         slots.update(_extract_invitation_slots(text, normalized))
     elif detected_doc_type == "Giấy giới thiệu":
         slots.update(_extract_introduction_slots(text, normalized))
+    elif detected_doc_type == "Công điện":
+        slots.update(_extract_dispatch_slots(text, normalized))
+    elif detected_doc_type == "Biên bản":
+        slots.update(_extract_minutes_slots(text, normalized))
+
+    if detected_doc_type in {"Tờ trình", "Giấy mời"} and slots.get("recipient"):
+        slots.setdefault("approval_target", slots["recipient"])
+        slots.setdefault("invitee", slots["recipient"])
 
     slots.setdefault("topic", _extract_topic(text, detected_doc_type))
+    slots = normalize_slots(detected_doc_type, slots)
     catalog_missing_fields = missing_required_slots(detected_doc_type, slots)
     fallback_missing_fields = [
         name
@@ -110,6 +122,10 @@ def _detect_doc_type(normalized: str, default_doc_type: str) -> tuple[str, str, 
         ("bien ban", "Biên bản", "lap_bien_ban"),
         ("thong bao", "Thông báo", "thong_bao"),
         ("to trinh", "Tờ trình", "to_trinh"),
+        ("quyet dinh truc tiep", "Quyết định", "quyet_dinh"),
+        ("quyet dinh gian tiep", "Quyết định", "quyet_dinh"),
+        ("quyet dinh ca biet", "Quyết định", "quyet_dinh"),
+        ("quyet dinh ban hanh", "Quyết định", "quyet_dinh"),
         ("quyet dinh", "Quyết định hành chính đơn giản", "quyet_dinh"),
         ("cong van", "Công văn", "cong_van"),
     ]
@@ -144,8 +160,13 @@ def _extract_common_slots(text: str, normalized: str) -> dict[str, str]:
     if date_match:
         slots["date"] = date_match.group(1)
 
-    if "phe duyet" in normalized:
-        slots["approval_target"] = _extract_after_phrase(text, ["phê duyệt", "phe duyet"])
+    event_time = _extract_after_phrase(text, ["vào lúc", "luc", "thời gian", "thoi gian"])
+    if event_time:
+        slots["event_time"] = event_time
+
+    event_location = _extract_after_phrase(text, ["tại", "tai", "địa điểm", "dia diem"])
+    if event_location:
+        slots["event_location"] = event_location
 
     return slots
 
@@ -195,10 +216,19 @@ def _extract_invitation_slots(text: str, normalized: str) -> dict[str, str]:
     invitee = _match_after_label(text, ["mời", "moi", "kính mời"])
     if invitee:
         slots["invitee"] = invitee
+    event_topic_match = re.search(
+        r"(?:dự|du|tham dự|tham du)\s+(?P<topic>.+?)(?:\s+(?:vào lúc|vao luc|thời gian|thoi gian|tại|tai)\s+|$)",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if event_topic_match:
+        slots["topic"] = _clean_slot(event_topic_match.group("topic"))
     if "tap huan" in normalized:
         slots["event_name"] = "Tập huấn"
     elif "hoi nghi" in normalized:
         slots["event_name"] = "Hội nghị"
+    elif "hop" in normalized:
+        slots["event_name"] = "Cuộc họp"
     time_value = _extract_after_phrase(text, ["vào lúc", "luc", "thời gian", "thoi gian"])
     if time_value:
         slots["event_time"] = time_value
@@ -210,19 +240,94 @@ def _extract_invitation_slots(text: str, normalized: str) -> dict[str, str]:
 
 def _extract_introduction_slots(text: str, normalized: str) -> dict[str, str]:
     slots: dict[str, str] = {}
-    name = _extract_after_phrase(text, ["giới thiệu", "gioi thieu", "cử", "cu"])
-    if name:
-        slots["subject_name"] = name
-    destination = _extract_after_phrase(text, ["đến", "den", "tới", "toi"])
-    if destination:
-        slots["destination"] = destination
-    purpose = _extract_after_phrase(text, ["về việc", "ve viec", "để", "de"])
+    name_match = re.search(
+        r"(?:giới thiệu|gioi thieu|cử|cu)\s+(?P<name>.+?)\s+(?:đến|den|tới|toi)\s+",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if name_match:
+        slots["subject_name"] = _clean_slot(name_match.group("name"))
+    else:
+        name = _extract_after_phrase(text, ["giới thiệu", "gioi thieu", "cử", "cu"])
+        if name:
+            slots["subject_name"] = name
+
+    destination_match = re.search(
+        r"(?:đến|den|tới|toi)\s+(?P<destination>.+?)(?:\s+(?:để|de|về việc|ve viec)\s+|$)",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if destination_match:
+        slots["destination"] = _clean_slot(destination_match.group("destination"))
+
+    purpose = _extract_after_phrase(text, ["để", "de", "về việc", "ve viec"])
     if purpose:
         slots["purpose"] = purpose
     return slots
 
 
+def _extract_dispatch_slots(text: str, normalized: str) -> dict[str, str]:
+    slots: dict[str, str] = {}
+    if "hoa toc" in normalized:
+        slots["urgency"] = "HỎA TỐC"
+    elif "khan" in normalized:
+        slots["urgency"] = "KHẨN"
+
+    recipient = _match_after_label(text, ["kính gửi", "gui", "gửi"])
+    if recipient:
+        slots["recipient"] = recipient
+
+    deadline = _extract_after_phrase(
+        text,
+        ["thời hạn", "thoi han", "trước", "truoc", "hoàn thành trước", "hoan thanh truoc"],
+    )
+    if deadline:
+        slots["deadline"] = deadline
+
+    responsible = _extract_after_phrase(
+        text,
+        ["đơn vị chịu trách nhiệm", "don vi chiu trach nhiem", "giao", "phân công", "phan cong"],
+    )
+    if responsible:
+        slots["responsible_unit"] = responsible
+
+    topic = _extract_topic_from_label(text)
+    if topic:
+        slots["topic"] = topic
+
+    return slots
+
+
+def _extract_minutes_slots(text: str, normalized: str) -> dict[str, str]:
+    slots: dict[str, str] = {}
+    participants = _extract_after_phrase(
+        text,
+        ["thành phần", "thanh phan", "thành phần tham dự", "thanh phan tham du"],
+    )
+    if participants:
+        slots["participants"] = participants
+    chairperson = _extract_after_phrase(text, ["chủ trì", "chu tri"])
+    if chairperson:
+        slots["chairperson"] = chairperson
+    secretary = _extract_after_phrase(text, ["thư ký", "thu ky"])
+    if secretary:
+        slots["secretary"] = secretary
+    conclusion = _extract_after_phrase(text, ["kết luận", "ket luan"])
+    if conclusion:
+        slots["conclusion"] = conclusion
+    topic = _extract_topic_from_label(text)
+    if topic:
+        slots["topic"] = topic
+    elif "hop" in normalized:
+        slots["topic"] = _extract_topic(text, "Biên bản")
+    return slots
+
+
 def _extract_topic(text: str, detected_doc_type: str) -> str:
+    labeled_topic = _extract_topic_from_label(text)
+    if labeled_topic:
+        return labeled_topic[:160]
+
     normalized = " ".join(text.strip().split())
     prefixes = [
         "soạn",
@@ -235,6 +340,11 @@ def _extract_topic(text: str, detected_doc_type: str) -> str:
         "quyết định",
         "giấy nghỉ phép",
         "giấy mời",
+        "giấy giới thiệu",
+        "công điện",
+        "biên bản",
+        "cuộc họp",
+        "họp",
     ]
     lowered = normalized.lower()
     for prefix in prefixes:
@@ -242,7 +352,33 @@ def _extract_topic(text: str, detected_doc_type: str) -> str:
         if lowered.startswith(prefix_lower):
             normalized = normalized[len(prefix):].strip(" :.-")
             lowered = normalized.lower()
+    normalized = _trim_topic_tail(normalized)
     return normalized[:160] or detected_doc_type
+
+
+def _extract_topic_from_label(text: str) -> str:
+    return _extract_after_phrase(text, ["về việc", "ve viec", "v/v", "nội dung", "noi dung"])
+
+
+def _trim_topic_tail(value: str) -> str:
+    normalized_value = value
+    for phrase in [
+        "kính gửi",
+        "kinh gui",
+        "vào lúc",
+        "vao luc",
+        "tại",
+        "tai",
+        "thành phần",
+        "thanh phan",
+        "thời hạn",
+        "thoi han",
+    ]:
+        pattern = re.compile(rf"\b{re.escape(phrase)}\b", flags=re.IGNORECASE)
+        match = pattern.search(normalized_value)
+        if match and match.start() > 0:
+            normalized_value = normalized_value[: match.start()]
+    return _clean_slot(normalized_value.rstrip(" ,;"))
 
 
 def _match_after_label(text: str, labels: list[str]) -> str:

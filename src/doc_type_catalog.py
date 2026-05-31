@@ -9,6 +9,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from src.slot_normalizer import normalize_slots
+
 
 CATALOG_DIR = Path(__file__).resolve().parents[1] / "data" / "doc_types"
 
@@ -62,7 +64,10 @@ def load_doc_type_specs() -> tuple[DocTypeSpec, ...]:
     specs: list[DocTypeSpec] = []
     for path in sorted(CATALOG_DIR.glob("*.json")):
         with path.open("r", encoding="utf-8") as file:
-            specs.append(DocTypeSpec.from_dict(json.load(file)))
+            raw_data = json.load(file)
+        raw_specs = raw_data if isinstance(raw_data, list) else [raw_data]
+        for raw_spec in raw_specs:
+            specs.append(DocTypeSpec.from_dict(raw_spec))
     return tuple(specs)
 
 
@@ -143,7 +148,7 @@ def render_template_draft(
         topic=topic,
         today=today,
         citations=citations,
-        slots=slots or {},
+        slots=normalize_slots(spec.name, slots or {}),
         agency_parent=agency_parent,
         agency_name=agency_name,
         place_name=place_name,
@@ -268,6 +273,16 @@ def _placeholder_for_slot(slot: str) -> str:
         "legal_basis": "[Căn cứ pháp lý]",
         "responsible_unit": "[Đơn vị tham mưu/chịu trách nhiệm]",
         "effective_date": "[Ngày ký]",
+        "urgency": "[Mức độ khẩn]",
+        "deadline": "[Thời hạn thực hiện/báo cáo]",
+        "invitee": "[Cơ quan/đơn vị/cá nhân được mời]",
+        "event_name": "[Tên cuộc họp/sự kiện]",
+        "chairperson": "[Người chủ trì]",
+        "secretary": "[Thư ký]",
+        "destination": "[Cơ quan/đơn vị đến làm việc]",
+        "purpose": "[Mục đích làm việc]",
+        "valid_until": "[Ngày hết hiệu lực]",
+        "conclusion": "[Kết luận cuộc họp/làm việc]",
         "topic": "[Nội dung chính]",
     }
     return labels.get(slot, f"[{slot}]")

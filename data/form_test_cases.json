@@ -1,0 +1,336 @@
+[
+  {
+    "id": "FORM-001",
+    "query": "Nguyễn Xuân Tịnh xin nghỉ 4 ngày vì ốm từ ngày 1/6/2026",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Giấy nghỉ phép",
+    "expected_fragments": [
+      "Được nghỉ phép trong thời gian: 4 ngày (từ 01/06/2026 đến 04/06/2026).",
+      "Lý do: ốm"
+    ],
+    "forbidden_fragments": [
+      "từ từ ngày",
+      "[Ngày kết thúc]",
+      "1/6/2026",
+      "ốm từ ngày"
+    ],
+    "description": "Giấy nghỉ phép chuẩn hóa ngày, tự suy ngày kết thúc và không lặp tiền tố thời gian."
+  },
+  {
+    "id": "FORM-002",
+    "query": "soạn công văn đề nghị cung cấp số liệu chuyển đổi số, kính gửi Sở Thông tin và Truyền thông",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Công văn",
+    "expected_fragments": [
+      "Kính gửi: Sở Thông tin và Truyền thông",
+      "V/v:"
+    ],
+    "forbidden_fragments": [
+      "Kính gửi: [Tên"
+    ],
+    "description": "Công văn điền đúng nơi nhận khi người dùng cung cấp kính gửi."
+  },
+  {
+    "id": "FORM-003",
+    "query": "tờ trình phê duyệt kế hoạch triển khai phần mềm nội bộ, kính gửi Ban Giám đốc",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Tờ trình",
+    "expected_fragments": [
+      "Kính gửi: Ban Giám đốc",
+      "I. Sự cần thiết",
+      "III. Kiến nghị"
+    ],
+    "forbidden_fragments": [
+      "Kính gửi: [",
+      "Kính gửi: kế hoạch"
+    ],
+    "description": "Tờ trình dùng kính gửi làm cơ quan/người phê duyệt, không lấy nhầm nội dung sau cụm phê duyệt."
+  },
+  {
+    "id": "FORM-004",
+    "query": "thông báo tổ chức tập huấn an toàn thông tin vào lúc 08:00 ngày 05/06/2026 tại Hội trường A",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Thông báo",
+    "expected_fragments": [
+      "THÔNG BÁO",
+      "08:00 ngày 05/06/2026",
+      "Hội trường A"
+    ],
+    "forbidden_fragments": [
+      "5/6/2026"
+    ],
+    "description": "Thông báo giữ thông tin thời gian/địa điểm và chuẩn hóa ngày dạng số."
+  },
+  {
+    "id": "FORM-005",
+    "query": "công điện khẩn gửi UBND các tỉnh về việc ứng phó bão, thời hạn trước 17:00 ngày 5/6/2026",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Công điện",
+    "expected_fragments": [
+      "CÔNG ĐIỆN",
+      "KHẨN",
+      "Kính gửi: UBND các tỉnh",
+      "Về việc: ứng phó bão",
+      "Thời hạn thực hiện/báo cáo: trước 17:00 ngày 05/06/2026"
+    ],
+    "forbidden_fragments": [
+      "5/6/2026",
+      "Kính gửi: [",
+      "Về việc: công điện"
+    ],
+    "description": "Công điện điền đúng nơi nhận, độ khẩn, chủ đề và chuẩn hóa hạn báo cáo."
+  },
+  {
+    "id": "FORM-006",
+    "query": "giấy mời Phòng Tài chính dự họp chuyển đổi số vào lúc 08:00 ngày 5/6/2026 tại Hội trường A",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Giấy mời",
+    "expected_fragments": [
+      "GIẤY MỜI",
+      "Kính mời: Phòng Tài chính",
+      "Thời gian: 08:00 ngày 05/06/2026.",
+      "Địa điểm: Hội trường A."
+    ],
+    "forbidden_fragments": [
+      "5/6/2026",
+      "Kính mời: [",
+      "tại Hội trường A."
+    ],
+    "description": "Giấy mời tách đúng đơn vị được mời, thời gian và địa điểm."
+  },
+  {
+    "id": "FORM-007",
+    "query": "giấy giới thiệu Nguyễn Văn A đến Sở Nội vụ để liên hệ công tác",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Giấy giới thiệu",
+    "expected_fragments": [
+      "GIẤY GIỚI THIỆU",
+      "Ông (bà): Nguyễn Văn A",
+      "Được cử đến: Sở Nội vụ.",
+      "Về việc: liên hệ công tác"
+    ],
+    "forbidden_fragments": [
+      "Ông (bà): Nguyễn Văn A đến",
+      "Được cử đến: [",
+      "Về việc: ["
+    ],
+    "description": "Giấy giới thiệu tách đúng người được giới thiệu, nơi đến và mục đích."
+  },
+  {
+    "id": "FORM-008",
+    "query": "biên bản cuộc họp giao ban vào lúc 14:00 ngày 5/6/2026 tại Phòng họp 1 thành phần Ban Giám đốc",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Biên bản",
+    "expected_fragments": [
+      "BIÊN BẢN",
+      "Thời gian: 14:00 ngày 05/06/2026.",
+      "Địa điểm: Phòng họp 1.",
+      "Thành phần tham dự: Ban Giám đốc."
+    ],
+    "forbidden_fragments": [
+      "5/6/2026",
+      "Thời gian: [",
+      "Địa điểm: [",
+      "Thành phần tham dự: ["
+    ],
+    "description": "Biên bản tách đúng thời gian, địa điểm và thành phần tham dự."
+  },
+  {
+    "id": "FORM-DT-001",
+    "query": "quyết định thành lập tổ kiểm thử toàn danh mục văn bản",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Quyết định hành chính đơn giản",
+    "expected_fragments": ["QUYẾT ĐỊNH", "QUYẾT ĐỊNH:", "Điều 1."],
+    "forbidden_fragments": ["{{"],
+    "description": "Quyết định hành chính đơn giản có form riêng và không rơi về công văn."
+  },
+  {
+    "id": "FORM-DT-002",
+    "query": "nghị quyết chuyển đổi số cấp xã",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Nghị quyết",
+    "expected_fragments": ["NGHỊ QUYẾT", "QUYẾT NGHỊ:", "Điều 1."],
+    "forbidden_fragments": ["{{"],
+    "description": "Nghị quyết có schema/template riêng."
+  },
+  {
+    "id": "FORM-DT-003",
+    "query": "quyết định ban hành danh mục biểu mẫu hành chính",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Quyết định",
+    "expected_fragments": ["QUYẾT ĐỊNH", "QUYẾT ĐỊNH:", "Điều 1."],
+    "forbidden_fragments": ["{{"],
+    "description": "Quyết định chung được nhận diện riêng với quyết định hành chính đơn giản."
+  },
+  {
+    "id": "FORM-DT-004",
+    "query": "chỉ thị tăng cường phòng cháy chữa cháy",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Chỉ thị",
+    "expected_fragments": ["CHỈ THỊ", "Yêu cầu", "Nơi nhận:"],
+    "forbidden_fragments": ["{{"],
+    "description": "Chỉ thị có template riêng."
+  },
+  {
+    "id": "FORM-DT-005",
+    "query": "quy chế làm việc của ban chỉ đạo chuyển đổi số",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Quy chế",
+    "expected_fragments": ["QUY CHẾ", "Chương I", "Điều 1."],
+    "forbidden_fragments": ["{{"],
+    "description": "Quy chế có bố cục chương/điều."
+  },
+  {
+    "id": "FORM-DT-006",
+    "query": "quy định quản lý tài sản công",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Quy định",
+    "expected_fragments": ["QUY ĐỊNH", "Điều 1.", "Điều 2."],
+    "forbidden_fragments": ["{{"],
+    "description": "Quy định có template riêng."
+  },
+  {
+    "id": "FORM-DT-007",
+    "query": "hướng dẫn kê khai hồ sơ trực tuyến",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Hướng dẫn",
+    "expected_fragments": ["HƯỚNG DẪN", "I. Mục đích, yêu cầu", "II. Nội dung hướng dẫn"],
+    "forbidden_fragments": ["{{"],
+    "description": "Hướng dẫn có bố cục mục đích và nội dung hướng dẫn."
+  },
+  {
+    "id": "FORM-DT-008",
+    "query": "thông cáo báo chí về hội nghị chuyển đổi số",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Thông cáo",
+    "expected_fragments": ["THÔNG CÁO", "Nội dung thông cáo:", "Thông tin liên hệ:"],
+    "forbidden_fragments": ["{{"],
+    "description": "Thông cáo có template công bố thông tin."
+  },
+  {
+    "id": "FORM-DT-009",
+    "query": "báo cáo kết quả cải cách hành chính quý I",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Báo cáo",
+    "expected_fragments": ["BÁO CÁO", "I. Tình hình", "II. Kết quả", "III. Kiến nghị"],
+    "forbidden_fragments": ["{{"],
+    "description": "Báo cáo có các mục tình hình, kết quả, kiến nghị."
+  },
+  {
+    "id": "FORM-DT-010",
+    "query": "chương trình công tác tháng 6",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Chương trình",
+    "expected_fragments": ["CHƯƠNG TRÌNH", "I. Mục tiêu", "II. Nội dung chương trình"],
+    "forbidden_fragments": ["{{"],
+    "description": "Chương trình có template riêng."
+  },
+  {
+    "id": "FORM-DT-011",
+    "query": "kế hoạch triển khai chuyển đổi số",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Kế hoạch",
+    "expected_fragments": ["KẾ HOẠCH", "I. Mục đích, yêu cầu", "II. Nội dung thực hiện"],
+    "forbidden_fragments": ["{{"],
+    "description": "Kế hoạch có bố cục mục đích, nội dung, tổ chức thực hiện."
+  },
+  {
+    "id": "FORM-DT-012",
+    "query": "phương án phòng chống bão",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Phương án",
+    "expected_fragments": ["PHƯƠNG ÁN", "I. Tình huống/phạm vi", "II. Nội dung phương án"],
+    "forbidden_fragments": ["{{"],
+    "description": "Phương án có template riêng."
+  },
+  {
+    "id": "FORM-DT-013",
+    "query": "đề án nâng cao chất lượng dịch vụ công",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Đề án",
+    "expected_fragments": ["ĐỀ ÁN", "I. Sự cần thiết", "II. Mục tiêu", "III. Giải pháp"],
+    "forbidden_fragments": ["{{"],
+    "description": "Đề án có bố cục sự cần thiết, mục tiêu, giải pháp."
+  },
+  {
+    "id": "FORM-DT-014",
+    "query": "dự án xây dựng cổng dịch vụ công",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Dự án",
+    "expected_fragments": ["DỰ ÁN", "I. Thông tin dự án", "II. Nội dung thực hiện"],
+    "forbidden_fragments": ["{{"],
+    "description": "Dự án có template riêng."
+  },
+  {
+    "id": "FORM-DT-015",
+    "query": "bản ghi nhớ hợp tác chia sẻ dữ liệu với Sở Nội vụ",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Bản ghi nhớ",
+    "expected_fragments": ["BẢN GHI NHỚ", "Các bên ghi nhớ", "Nội dung ghi nhớ"],
+    "forbidden_fragments": ["{{"],
+    "description": "Bản ghi nhớ có template riêng."
+  },
+  {
+    "id": "FORM-DT-016",
+    "query": "bản thỏa thuận phối hợp cung cấp dữ liệu",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Bản thỏa thuận",
+    "expected_fragments": ["BẢN THỎA THUẬN", "Các bên thỏa thuận", "Nội dung thỏa thuận"],
+    "forbidden_fragments": ["{{"],
+    "description": "Bản thỏa thuận có template riêng."
+  },
+  {
+    "id": "FORM-DT-017",
+    "query": "hợp đồng cung cấp phần mềm quản lý văn bản",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Hợp đồng",
+    "expected_fragments": ["HỢP ĐỒNG", "Bên A", "Bên B", "Điều 1."],
+    "forbidden_fragments": ["{{"],
+    "description": "Hợp đồng có template riêng."
+  },
+  {
+    "id": "FORM-DT-018",
+    "query": "giấy ủy quyền cho Nguyễn Văn B thực hiện thủ tục hành chính",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Giấy ủy quyền",
+    "expected_fragments": ["GIẤY ỦY QUYỀN", "Người ủy quyền", "Người được ủy quyền", "Phạm vi ủy quyền"],
+    "forbidden_fragments": ["{{"],
+    "description": "Giấy ủy quyền có template riêng."
+  },
+  {
+    "id": "FORM-DT-019",
+    "query": "phiếu gửi hồ sơ đề nghị thẩm định dự toán",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Phiếu gửi",
+    "expected_fragments": ["PHIẾU GỬI", "Kính gửi:", "Nội dung gửi:"],
+    "forbidden_fragments": ["{{"],
+    "description": "Phiếu gửi có template riêng."
+  },
+  {
+    "id": "FORM-DT-020",
+    "query": "phiếu chuyển đơn kiến nghị của công dân",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Phiếu chuyển",
+    "expected_fragments": ["PHIẾU CHUYỂN", "Kính gửi:", "Nội dung chuyển:"],
+    "forbidden_fragments": ["{{"],
+    "description": "Phiếu chuyển có template riêng."
+  },
+  {
+    "id": "FORM-DT-021",
+    "query": "phiếu báo thay đổi lịch tiếp công dân",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Phiếu báo",
+    "expected_fragments": ["PHIẾU BÁO", "Kính gửi:", "Nội dung báo:"],
+    "forbidden_fragments": ["{{"],
+    "description": "Phiếu báo có template riêng."
+  },
+  {
+    "id": "FORM-DT-022",
+    "query": "thư công chúc mừng hội nghị chuyển đổi số",
+    "default_doc_type": "Công văn",
+    "expected_doc_type": "Thư công",
+    "expected_fragments": ["THƯ CÔNG", "Kính gửi:", "Nội dung thư:"],
+    "forbidden_fragments": ["{{"],
+    "description": "Thư công có template riêng."
+  }
+]

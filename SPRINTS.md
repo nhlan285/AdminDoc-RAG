@@ -8,9 +8,10 @@ Nguyên tắc làm việc:
 
 ## Trạng thái hiện tại
 
-- Sprint hiện tại: Sprint 7
-- Trạng thái: Sẵn sàng demo
-- Điều kiện mở Sprint 8: Người dùng xác nhận "Sprint 7 demo xong" hoặc nội dung tương đương.
+- Sprint hiện tại: Sprint 8 - Đồng bộ schema lab, demo và báo cáo.
+- Trạng thái: Đang hoàn thiện tài liệu trình bày, báo cáo và kế hoạch demo.
+- Nhánh làm việc: `schema-lab-doc-crawler-20260530`.
+- Nguyên tắc: không merge/force vào `main` cho đến khi người dùng xác nhận bản lab đạt yêu cầu.
 
 ## Sprint 1 - Nền demo RAG mô phỏng
 
@@ -173,7 +174,7 @@ Trạng thái triển khai:
 - Đã bổ sung phân loại nguồn `system` / `user_upload`, lọc nguồn khi soạn thảo và xóa tài liệu upload riêng.
 - Đã bổ sung kịch bản demo 3-5 phút tại `DEMO_SCRIPT.md` và bộ câu lệnh demo tại `data/demo_queries.json`.
 - Đã khôi phục và chuẩn hóa bộ dữ liệu/test demo: `admin_docs.json`, `sprint2_sample_docs.json`, `retrieval_test_cases.json`, `generation_test_cases.json`.
-- Đang chờ người dùng demo và xác nhận trước khi mở Sprint 8.
+- Đã làm nền cho bản demo notebook-style và nhánh schema lab.
 
 Thành phẩm demo:
 
@@ -189,19 +190,128 @@ Tiêu chí chấp nhận:
 - Demo hoàn chỉnh trong 3-5 phút.
 - Có ít nhất 3 kịch bản demo: Công văn, Thông báo, Tờ trình.
 
-## Sprint 8 - Đóng gói báo cáo kỹ thuật
+## Sprint 8 - Schema lab, crawler và đồng bộ báo cáo
 
-Mục tiêu: Chuẩn bị phần tài liệu kỹ thuật khớp với sản phẩm đã làm.
+Mục tiêu: Đồng bộ sản phẩm theo hướng RAG có kiểm soát, có schema loại văn bản, có dữ liệu crawl công khai và có tài liệu quản lý dự án đầy đủ.
+
+Trạng thái triển khai:
+
+- Đã tạo nhánh riêng `schema-lab-doc-crawler-20260530`, không merge vào `main`.
+- Đã thêm catalog loại văn bản trong `data/doc_types/`.
+- Đã thêm module `src/doc_type_catalog.py` để route loại văn bản, kiểm tra trường bắt buộc và render template.
+- Đã nối catalog vào extractor, generator, LLM fallback và quality checker.
+- Đã thêm script `scripts/crawl_public_sources.py` để crawl/tải một số nguồn công khai theo manifest.
+- Đã tạo file thuyết trình `docs/THUYET_TRINH_PROJECT_ADMIN_DOC_RAG.md`.
+- Đã đồng bộ README, demo script, báo cáo kinh tế kỹ thuật, báo cáo dự toán và kế hoạch chỉnh sửa demo theo cùng phạm vi.
 
 Thành phẩm demo:
 
-- Sơ đồ kiến trúc RAG.
-- Mô tả module: Data, Retriever, Generator, UI, Quality Check.
-- Bảng đối chiếu yêu cầu đề tài với chức năng đã triển khai.
-- Danh sách rủi ro và cách giảm thiểu trong code.
+- Demo nhận diện `Giấy nghỉ phép` từ câu tự nhiên như `Xuân Tịnh xin nghỉ 4 ngày vì bị ốm`.
+- Demo sinh văn bản theo template schema thay vì chỉ phụ thuộc prompt LLM.
+- Demo giải thích cách mở rộng hàng chục loại văn bản bằng file JSON.
+- Demo nguồn crawl công khai được nạp vào kho tri thức.
+- Bộ tài liệu trình bày có cả phần kỹ thuật và phần quản lý dự án.
 
 Tiêu chí chấp nhận:
 
-- Tài liệu kỹ thuật phản ánh đúng app đang chạy.
-- Có ảnh chụp màn hình hoặc mô tả luồng demo.
-- Sẵn sàng đưa vào báo cáo/slide nhóm.
+- App chạy được trên nhánh lab.
+- Tài liệu phản ánh đúng trạng thái code hiện tại.
+- Báo cáo dự toán, báo cáo kinh tế kỹ thuật, Sprint và demo script dùng cùng phạm vi.
+- Có câu trả lời sẵn cho câu hỏi về RAG, BM25, schema, crawler, LLM fallback, Scrum và rủi ro.
+- Nhánh lab có thể push riêng để người dùng xem, không ảnh hưởng `main`.
+
+## Sprint 9 - Hybrid retrieval và vector index local
+
+Mục tiêu: Nâng cấp truy xuất từ BM25 thuần sang hybrid search để hỗ trợ cả tìm kiếm từ khóa và tìm kiếm gần nghĩa.
+
+Đã thực hiện:
+
+- Thêm module `src/embeddings.py` để cấu hình embedding provider.
+- Thêm `local_hash` embedding chạy offline để demo không phụ thuộc API key.
+- Hỗ trợ cấu hình OpenAI embedding qua `.env` khi muốn tìm kiếm ngữ nghĩa thật hơn.
+- Thêm `src/vector_store.py` để lưu vector trong SQLite local tại `data/knowledge.sqlite`.
+- Mở rộng `src/retriever.py` với 3 chế độ: `bm25`, `vector`, `hybrid`.
+- Hybrid retriever gộp điểm BM25 và vector theo trọng số `HYBRID_BM25_WEIGHT` / `HYBRID_VECTOR_WEIGHT`.
+- Giao diện mặc định dùng hybrid retrieval và có nút tạo lại chỉ mục vector.
+- Giữ fallback BM25 nếu vector backend hoặc embedding provider gặp lỗi.
+
+Tiêu chí chấp nhận:
+
+- App vẫn chạy được ở chế độ demo không API key.
+- Test retrieval/generation/quality/extraction hiện có vẫn đạt.
+- Người dùng không cần chọn thuật toán truy xuất; app mặc định chạy hybrid.
+- Vector index có thể tạo lại từ giao diện và được lưu bền vững trong SQLite.
+
+## Sprint 10 - Clarification flow
+
+Mục tiêu: Khi yêu cầu thiếu thông tin bắt buộc, hệ thống hỏi lại ngắn gọn trước khi sinh bản nháp.
+
+Đã thực hiện:
+
+- Tận dụng `missing_fields` từ `src/extractor.py`.
+- Thêm trạng thái `pending_clarification` trong Streamlit để lưu yêu cầu đang chờ bổ sung.
+- Hiển thị form hỏi tối đa 3 trường còn thiếu, ví dụ ngày bắt đầu nghỉ, nơi nhận, cơ quan phê duyệt.
+- Merge câu trả lời của người dùng vào `RequestAnalysis.slots` trước khi gọi generator.
+- Cho phép người dùng bỏ qua và tạo bản nháp với placeholder nếu muốn demo nhanh.
+
+Tiêu chí chấp nhận:
+
+- Ca thiếu thông tin không sinh ngay bản nháp đầy placeholder nếu người dùng chưa xác nhận.
+- Thông tin bổ sung xuất hiện trong bản nháp sinh ra.
+- Luồng cũ vẫn có đường thoát bằng nút tạo với placeholder.
+- Test retrieval/generation/quality/extraction hiện có vẫn đạt.
+
+## Sprint 11 - Chuẩn hóa form và kiểm thử tự động
+
+Mục tiêu: Giảm lỗi form do dữ liệu người dùng nhập chưa chuẩn, đặc biệt các trường ngày tháng và placeholder.
+
+Đã thực hiện:
+
+- Thêm `src/slot_normalizer.py` để chuẩn hóa slot dùng chung trước khi render template.
+- Chuẩn hóa ngày nhập về dạng `dd/mm/yyyy`, ví dụ `1/6/2026` thành `01/06/2026`.
+- Loại bỏ tiền tố dư trong slot ngày như `từ ngày`, tránh lỗi `từ từ ngày`.
+- Tự suy `end_date` cho giấy nghỉ phép khi có `start_date` và `leave_days`.
+- Chuẩn hóa lý do nghỉ phép để không kéo theo cụm thời gian vào phần lý do.
+- Bổ sung kiểm tra chất lượng cho cụm thời gian lặp, ngày nhập liệu không chuẩn và ngày kết thúc nghỉ phép.
+- Thêm `data/form_test_cases.json` và nút `Chạy test form` trong giao diện kiểm thử.
+- Bổ sung schema JSON có kiểm soát cho `Công điện`, `Giấy mời`, `Giấy giới thiệu`, `Biên bản`.
+- Mở rộng khu vực `Chất lượng bản nháp` ngay dưới bản nháp để thấy rõ điểm, rủi ro, nguồn dùng, lỗi ưu tiên và toàn bộ checklist.
+- Bổ sung phần thuyết trình chi tiết về chunking, hybrid retrieval, trả về `SearchResult`, sinh citation và cách chấm điểm chất lượng.
+
+Tiêu chí chấp nhận:
+
+- Giấy nghỉ phép không còn lỗi `từ từ ngày` và tự điền ngày kết thúc khi đủ dữ kiện.
+- Các ngày dạng số trong bản nháp thống nhất `dd/mm/yyyy`.
+- Các form `Công điện`, `Giấy mời`, `Giấy giới thiệu`, `Biên bản` có test tự động cho slot chính.
+- UI hiển thị phần đánh giá bản nháp ở vùng rộng, không chỉ phụ thuộc bảng nhỏ trong cột Studio.
+- Test form/template đạt cùng với test retrieval/generation/quality/extraction.
+
+## Sprint 12 - Phủ catalog 30 loại văn bản
+
+Mục tiêu: Không để các loại văn bản còn lại rơi về fallback/generic khi bị hỏi trong báo cáo; mỗi loại trong danh mục app phải có schema/template, nguồn truy xuất và test tự động.
+
+Đã thực hiện:
+
+- Bổ sung `data/doc_types/nd30_remaining.json` để phủ thêm Nghị quyết, Quyết định, Chỉ thị, Quy chế, Quy định, Hướng dẫn, Thông cáo, Báo cáo, Chương trình, Kế hoạch, Phương án, Đề án, Dự án, Bản ghi nhớ, Bản thỏa thuận, Hợp đồng, Giấy ủy quyền, Phiếu gửi, Phiếu chuyển, Phiếu báo, Thư công.
+- Bổ sung `data/doc_type_seed_docs.json` để mỗi loại văn bản có ít nhất một nguồn seed đúng loại cho truy xuất.
+- Mở rộng `data/retrieval_test_cases.json` để kiểm tra truy xuất toàn danh mục.
+- Mở rộng `data/form_test_cases.json` để kiểm tra form/template 30/30 loại văn bản.
+- Cập nhật UI kiểm thử thành `Chạy test truy xuất toàn danh mục`.
+- Cập nhật README và thuyết trình để nói rõ: đã phủ đủ danh mục, nhưng vẫn là prototype cần human review cho pháp lý/thẩm quyền/số liệu.
+
+Tiêu chí chấp nhận:
+
+- Catalog load đủ 30 loại văn bản.
+- Test retrieval toàn danh mục đạt.
+- Test form/template đạt 30/30.
+- Không còn mô tả sai rằng các loại ngoài nhóm demo chỉ là fallback/generic.
+
+Backlog sau Sprint 12:
+
+- Nâng độ sâu pháp lý/nghiệp vụ cho từng template theo lĩnh vực cụ thể.
+- Thêm OCR cho PDF scan.
+- Thử nghiệm embedding ngữ nghĩa tốt hơn: OpenAI embedding, sentence-transformers tiếng Việt, hoặc Qdrant/Chroma nếu cần scale.
+- Thêm reranking để kiểm soát nguồn trước khi đưa vào prompt sinh văn bản.
+- Thêm cơ chế duyệt nguồn trước khi đưa vào kho tri thức chính.
+- Thêm lịch sử phiên soạn thảo, phân quyền và nhật ký thao tác.
+- Đóng gói Docker hoặc triển khai server nội bộ.

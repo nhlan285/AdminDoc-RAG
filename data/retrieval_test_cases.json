@@ -33,5 +33,215 @@
     "doc_type": "Công văn",
     "expected_parent_id": "CV-MAU-003",
     "description": "Kiểm tra truy vấn không dấu vẫn tìm đúng công văn mời hội nghị sơ kết."
+  },
+  {
+    "id": "RET-DT-001",
+    "query": "mẫu phủ truy xuất loại Công văn",
+    "doc_type": "Công văn",
+    "expected_parent_id": "DOC-TYPE-CONG-VAN",
+    "description": "Phủ truy xuất đúng loại Công văn."
+  },
+  {
+    "id": "RET-DT-002",
+    "query": "mẫu phủ truy xuất loại Thông báo",
+    "doc_type": "Thông báo",
+    "expected_parent_id": "DOC-TYPE-THONG-BAO",
+    "description": "Phủ truy xuất đúng loại Thông báo."
+  },
+  {
+    "id": "RET-DT-003",
+    "query": "mẫu phủ truy xuất loại Tờ trình",
+    "doc_type": "Tờ trình",
+    "expected_parent_id": "DOC-TYPE-TO-TRINH",
+    "description": "Phủ truy xuất đúng loại Tờ trình."
+  },
+  {
+    "id": "RET-DT-004",
+    "query": "mẫu phủ truy xuất loại Quyết định hành chính đơn giản",
+    "doc_type": "Quyết định hành chính đơn giản",
+    "expected_parent_id": "DOC-TYPE-QD-HC-DON-GIAN",
+    "description": "Phủ truy xuất đúng loại Quyết định hành chính đơn giản."
+  },
+  {
+    "id": "RET-DT-005",
+    "query": "mẫu phủ truy xuất loại Nghị quyết",
+    "doc_type": "Nghị quyết",
+    "expected_parent_id": "DOC-TYPE-NGHI-QUYET",
+    "description": "Phủ truy xuất đúng loại Nghị quyết."
+  },
+  {
+    "id": "RET-DT-006",
+    "query": "mẫu phủ truy xuất loại Quyết định",
+    "doc_type": "Quyết định",
+    "expected_parent_id": "DOC-TYPE-QUYET-DINH",
+    "description": "Phủ truy xuất đúng loại Quyết định."
+  },
+  {
+    "id": "RET-DT-007",
+    "query": "mẫu phủ truy xuất loại Chỉ thị",
+    "doc_type": "Chỉ thị",
+    "expected_parent_id": "DOC-TYPE-CHI-THI",
+    "description": "Phủ truy xuất đúng loại Chỉ thị."
+  },
+  {
+    "id": "RET-DT-008",
+    "query": "mẫu phủ truy xuất loại Quy chế",
+    "doc_type": "Quy chế",
+    "expected_parent_id": "DOC-TYPE-QUY-CHE",
+    "description": "Phủ truy xuất đúng loại Quy chế."
+  },
+  {
+    "id": "RET-DT-009",
+    "query": "mẫu phủ truy xuất loại Quy định",
+    "doc_type": "Quy định",
+    "expected_parent_id": "DOC-TYPE-QUY-DINH",
+    "description": "Phủ truy xuất đúng loại Quy định."
+  },
+  {
+    "id": "RET-DT-010",
+    "query": "mẫu phủ truy xuất loại Hướng dẫn",
+    "doc_type": "Hướng dẫn",
+    "expected_parent_id": "DOC-TYPE-HUONG-DAN",
+    "description": "Phủ truy xuất đúng loại Hướng dẫn."
+  },
+  {
+    "id": "RET-DT-011",
+    "query": "mẫu phủ truy xuất loại Thông cáo",
+    "doc_type": "Thông cáo",
+    "expected_parent_id": "DOC-TYPE-THONG-CAO",
+    "description": "Phủ truy xuất đúng loại Thông cáo."
+  },
+  {
+    "id": "RET-DT-012",
+    "query": "mẫu phủ truy xuất loại Báo cáo",
+    "doc_type": "Báo cáo",
+    "expected_parent_id": "DOC-TYPE-BAO-CAO",
+    "description": "Phủ truy xuất đúng loại Báo cáo."
+  },
+  {
+    "id": "RET-DT-013",
+    "query": "mẫu phủ truy xuất loại Biên bản",
+    "doc_type": "Biên bản",
+    "expected_parent_id": "DOC-TYPE-BIEN-BAN",
+    "description": "Phủ truy xuất đúng loại Biên bản."
+  },
+  {
+    "id": "RET-DT-014",
+    "query": "mẫu phủ truy xuất loại Chương trình",
+    "doc_type": "Chương trình",
+    "expected_parent_id": "DOC-TYPE-CHUONG-TRINH",
+    "description": "Phủ truy xuất đúng loại Chương trình."
+  },
+  {
+    "id": "RET-DT-015",
+    "query": "mẫu phủ truy xuất loại Kế hoạch",
+    "doc_type": "Kế hoạch",
+    "expected_parent_id": "DOC-TYPE-KE-HOACH",
+    "description": "Phủ truy xuất đúng loại Kế hoạch."
+  },
+  {
+    "id": "RET-DT-016",
+    "query": "mẫu phủ truy xuất loại Phương án",
+    "doc_type": "Phương án",
+    "expected_parent_id": "DOC-TYPE-PHUONG-AN",
+    "description": "Phủ truy xuất đúng loại Phương án."
+  },
+  {
+    "id": "RET-DT-017",
+    "query": "mẫu phủ truy xuất loại Đề án",
+    "doc_type": "Đề án",
+    "expected_parent_id": "DOC-TYPE-DE-AN",
+    "description": "Phủ truy xuất đúng loại Đề án."
+  },
+  {
+    "id": "RET-DT-018",
+    "query": "mẫu phủ truy xuất loại Dự án",
+    "doc_type": "Dự án",
+    "expected_parent_id": "DOC-TYPE-DU-AN",
+    "description": "Phủ truy xuất đúng loại Dự án."
+  },
+  {
+    "id": "RET-DT-019",
+    "query": "mẫu phủ truy xuất loại Công điện",
+    "doc_type": "Công điện",
+    "expected_parent_id": "DOC-TYPE-CONG-DIEN",
+    "description": "Phủ truy xuất đúng loại Công điện."
+  },
+  {
+    "id": "RET-DT-020",
+    "query": "mẫu phủ truy xuất loại Bản ghi nhớ",
+    "doc_type": "Bản ghi nhớ",
+    "expected_parent_id": "DOC-TYPE-BAN-GHI-NHO",
+    "description": "Phủ truy xuất đúng loại Bản ghi nhớ."
+  },
+  {
+    "id": "RET-DT-021",
+    "query": "mẫu phủ truy xuất loại Bản thỏa thuận",
+    "doc_type": "Bản thỏa thuận",
+    "expected_parent_id": "DOC-TYPE-BAN-THOA-THUAN",
+    "description": "Phủ truy xuất đúng loại Bản thỏa thuận."
+  },
+  {
+    "id": "RET-DT-022",
+    "query": "mẫu phủ truy xuất loại Hợp đồng",
+    "doc_type": "Hợp đồng",
+    "expected_parent_id": "DOC-TYPE-HOP-DONG",
+    "description": "Phủ truy xuất đúng loại Hợp đồng."
+  },
+  {
+    "id": "RET-DT-023",
+    "query": "mẫu phủ truy xuất loại Giấy ủy quyền",
+    "doc_type": "Giấy ủy quyền",
+    "expected_parent_id": "DOC-TYPE-GIAY-UY-QUYEN",
+    "description": "Phủ truy xuất đúng loại Giấy ủy quyền."
+  },
+  {
+    "id": "RET-DT-024",
+    "query": "mẫu phủ truy xuất loại Giấy mời",
+    "doc_type": "Giấy mời",
+    "expected_parent_id": "DOC-TYPE-GIAY-MOI",
+    "description": "Phủ truy xuất đúng loại Giấy mời."
+  },
+  {
+    "id": "RET-DT-025",
+    "query": "mẫu phủ truy xuất loại Giấy giới thiệu",
+    "doc_type": "Giấy giới thiệu",
+    "expected_parent_id": "DOC-TYPE-GIAY-GIOI-THIEU",
+    "description": "Phủ truy xuất đúng loại Giấy giới thiệu."
+  },
+  {
+    "id": "RET-DT-026",
+    "query": "mẫu phủ truy xuất loại Giấy nghỉ phép",
+    "doc_type": "Giấy nghỉ phép",
+    "expected_parent_id": "DOC-TYPE-GIAY-NGHI-PHEP",
+    "description": "Phủ truy xuất đúng loại Giấy nghỉ phép."
+  },
+  {
+    "id": "RET-DT-027",
+    "query": "mẫu phủ truy xuất loại Phiếu gửi",
+    "doc_type": "Phiếu gửi",
+    "expected_parent_id": "DOC-TYPE-PHIEU-GUI",
+    "description": "Phủ truy xuất đúng loại Phiếu gửi."
+  },
+  {
+    "id": "RET-DT-028",
+    "query": "mẫu phủ truy xuất loại Phiếu chuyển",
+    "doc_type": "Phiếu chuyển",
+    "expected_parent_id": "DOC-TYPE-PHIEU-CHUYEN",
+    "description": "Phủ truy xuất đúng loại Phiếu chuyển."
+  },
+  {
+    "id": "RET-DT-029",
+    "query": "mẫu phủ truy xuất loại Phiếu báo",
+    "doc_type": "Phiếu báo",
+    "expected_parent_id": "DOC-TYPE-PHIEU-BAO",
+    "description": "Phủ truy xuất đúng loại Phiếu báo."
+  },
+  {
+    "id": "RET-DT-030",
+    "query": "mẫu phủ truy xuất loại Thư công",
+    "doc_type": "Thư công",
+    "expected_parent_id": "DOC-TYPE-THU-CONG",
+    "description": "Phủ truy xuất đúng loại Thư công."
   }
 ]

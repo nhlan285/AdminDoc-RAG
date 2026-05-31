@@ -1,173 +1,222 @@
-# AI hỗ trợ soạn thảo văn bản hành chính bằng RAG
+# AdminDoc-RAG
 
-Demo ban đầu cho đề tài: xây dựng hệ thống AI hỗ trợ soạn thảo văn bản hành chính ứng dụng mô hình RAG.
+Đề tài: **Xây dựng AI hỗ trợ soạn thảo văn bản hành chính sử dụng mô hình RAG**.
 
-## Mục tiêu bản đầu
+Đây là bản Proof of Concept phục vụ học phần **Quản lý dự án**. Sản phẩm hướng tới vai trò trợ lý soạn thảo: nhận yêu cầu tiếng Việt tự nhiên, truy xuất tài liệu/mẫu liên quan, sinh bản nháp có nguồn tham khảo, kiểm tra chất lượng và xuất file để người dùng rà soát.
 
-- Nhận yêu cầu soạn thảo từ người dùng.
-- Truy xuất tài liệu/mẫu văn bản liên quan từ kho tri thức cục bộ.
-- Phân tích yêu cầu để bóc tách loại văn bản, chủ thể, số ngày, lý do, địa điểm hoặc các trường cần điền.
-- Sinh bản nháp văn bản hành chính kèm nguồn tham khảo.
-- Giữ nguyên nguyên tắc human-in-the-loop: người dùng phải rà soát trước khi sử dụng.
+## Trạng thái hiện tại
 
-## Cấu trúc
+- Nhánh ổn định: `main`.
+- Nhánh thử nghiệm mở rộng: `schema-lab-doc-crawler-20260530`.
+- Giao diện: Streamlit theo phong cách notebook, tập trung vào 3 vùng chính: nguồn tri thức, cuộc trò chuyện/soạn thảo, bảng phân tích/chất lượng.
+- RAG: dùng hybrid search BM25 + vector SQLite, có chuẩn hóa tiếng Việt có dấu/không dấu và fallback BM25 khi vector chưa sẵn sàng.
+- Sinh văn bản: ưu tiên template có kiểm soát cho loại văn bản đã có schema; có thể dùng Gemini/OpenAI khi cấu hình `.env`.
+- Quản lý dự án: chia sprint rõ trong `SPRINTS.md`, có demo script và khung báo cáo trong `docs/`.
+
+## Chức năng chính
+
+- Nhập yêu cầu soạn thảo bằng tiếng Việt tự nhiên.
+- Tự động nhận diện loại văn bản khi bật chế độ phân tích yêu cầu.
+- Bóc tách thông tin như chủ thể, số ngày nghỉ, lý do, nơi nhận, thời gian, phạm vi.
+- Phát hiện trường còn thiếu, hỏi lại tối đa 3 thông tin quan trọng và vẫn cho phép tạo với placeholder khi cần demo nhanh.
+- Chuẩn hóa slot trước khi render form: ngày dạng `dd/mm/yyyy`, tự suy ngày kết thúc nghỉ phép từ ngày bắt đầu và số ngày nghỉ.
+- Truy xuất tài liệu liên quan trong kho tri thức bằng hybrid search BM25 + vector.
+- Sinh bản nháp có citation `[S1]`, `[S2]` và mục `Nguồn tham khảo`.
+- Kiểm tra chất lượng theo rule: thể thức, nguồn, citation, human-in-the-loop.
+- Xuất bản nháp dạng TXT/DOCX.
+- Upload tài liệu riêng và lọc nguồn theo `system` / `user_upload`.
+- Crawl một số nguồn công khai để mở rộng kho tri thức.
+- Mở rộng loại văn bản bằng file JSON trong `data/doc_types/`.
+
+## Phạm vi văn bản hiện có
+
+Các loại văn bản trong danh mục hiện đã có schema/template và nguồn seed phục vụ truy xuất:
+
+- Công văn.
+- Thông báo.
+- Tờ trình.
+- Quyết định hành chính đơn giản.
+- Nghị quyết.
+- Quyết định.
+- Chỉ thị.
+- Quy chế.
+- Quy định.
+- Hướng dẫn.
+- Thông cáo.
+- Báo cáo.
+- Biên bản.
+- Chương trình.
+- Kế hoạch.
+- Phương án.
+- Đề án.
+- Dự án.
+- Công điện.
+- Bản ghi nhớ.
+- Bản thỏa thuận.
+- Hợp đồng.
+- Giấy ủy quyền.
+- Giấy mời.
+- Giấy giới thiệu.
+- Giấy nghỉ phép.
+- Phiếu gửi.
+- Phiếu chuyển.
+- Phiếu báo.
+- Thư công.
+
+Nhánh schema lab đã bổ sung catalog JSON/spec cho toàn bộ danh mục trên. `data/doc_type_seed_docs.json` cung cấp nguồn mẫu nội bộ để truy xuất đúng loại văn bản, còn `data/form_test_cases.json` kiểm tra tự động form/template theo từng loại. Đây vẫn là prototype học thuật: template có khung đúng loại và placeholder rà soát, không thay thế kiểm duyệt pháp lý/thẩm quyền khi dùng thật.
+
+## Cấu trúc thư mục
 
 ```text
-ai_soan_thao_rag/
+AdminDoc-RAG/
 ├── app.py
+├── crawler.py
+├── data_auditor.py
+├── DEMO_SCRIPT.md
+├── README.md
+├── SPRINTS.md
+├── requirements.txt
 ├── data/
-│   └── admin_docs.json
+│   ├── admin_docs.json
+│   ├── sprint2_sample_docs.json
+│   ├── doc_type_seed_docs.json
+│   ├── retrieval_test_cases.json
+│   ├── generation_test_cases.json
+│   ├── extraction_test_cases.json
+│   ├── doc_types/
+│   ├── templates/
+│   ├── raw/
+│   └── processed/
 ├── docs/
+│   ├── THUYET_TRINH_PROJECT_ADMIN_DOC_RAG.md
 │   ├── KE_HOACH_CHINH_SUA_DEMO.md
 │   ├── BAO_CAO_KINH_TE_KY_THUAT_KHUNG.md
 │   └── BAO_CAO_DU_TOAN_KHUNG.md
-├── src/
-│   ├── documents.py
-│   ├── generator.py
-│   └── retriever.py
-├── .env.example
-├── .gitignore
-└── requirements.txt
+├── scripts/
+│   ├── crawl_public_sources.py
+│   └── template_converter.py
+└── src/
+    ├── documents.py
+    ├── embeddings.py
+    ├── preprocessing.py
+    ├── retriever.py
+    ├── vector_store.py
+    ├── extractor.py
+    ├── doc_type_catalog.py
+    ├── generator.py
+    ├── llm.py
+    ├── quality.py
+    ├── docx_exporter.py
+    ├── storage.py
+    └── evaluation.py
+```
+
+## Luồng xử lý
+
+```text
+Người dùng nhập yêu cầu
+  -> app.py nhận input
+  -> src/extractor.py phân tích yêu cầu
+  -> src/doc_type_catalog.py chọn loại văn bản/schema
+  -> src/retriever.py truy xuất nguồn liên quan bằng hybrid BM25 + vector
+  -> src/generator.py hoặc src/llm.py sinh bản nháp
+  -> src/quality.py kiểm tra chất lượng
+  -> src/docx_exporter.py xuất DOCX
+```
+
+## Cài đặt
+
+```powershell
+cd E:\.vscode\Ki_6\RAG\AdminDoc-RAG-schema-lab
+python -m venv .venv
+.\.venv\Scripts\python -m pip install -r requirements.txt
+```
+
+Nếu đã có môi trường ảo:
+
+```powershell
+.\.venv\Scripts\python -m pip install -r requirements.txt
 ```
 
 ## Chạy demo
 
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-Nếu đang dùng môi trường ảo đã tạo trong thư mục dự án:
-
 ```powershell
 .\.venv\Scripts\python -m streamlit run app.py
 ```
 
-## Nâng cấp hiện tại
+Nếu port 8501 đang bận:
 
-- App nạp thêm các template chuẩn trong `data/templates/` vào kho tri thức hệ thống.
-- Dữ liệu tri thức được đồng bộ sang SQLite local tại `data/knowledge.sqlite` để chuẩn bị cho giai đoạn database thật.
-- Tab `Soạn thảo` có tùy chọn `Tự động nhận diện yêu cầu`. Ví dụ nhập `Xuân Tịnh xin nghỉ 4 ngày vì ốm`, hệ thống nhận diện `Giấy nghỉ phép`, bóc tách `subject_name=Xuân Tịnh`, `leave_days=4`, `reason=ốm`, rồi điền vào bản nháp.
-- Retriever ưu tiên lọc đúng loại văn bản khi kho tri thức có loại đó.
-- Tab `Kho tri thức` có thêm test `Phân tích yêu cầu`.
-
-## Demo Sprint 2
-
-1. Mở tab `Kho tri thức`.
-2. Bấm `Nạp tài liệu mẫu`.
-3. Kiểm tra bảng chunk xuất hiện thêm dữ liệu từ `data/sprint2_sample_docs.json`.
-4. Ở phần `Kiểm tra truy xuất`, dùng câu:
-
-```text
-soạn công văn đề nghị cung cấp số liệu chuyển đổi số
+```powershell
+.\.venv\Scripts\python -m streamlit run app.py --server.port 8502
 ```
 
-Kết quả kỳ vọng: tài liệu `CV-MAU-002` xuất hiện trong nhóm kết quả đầu.
+## Cấu hình LLM
 
-Ngoài bộ mẫu có sẵn, có thể upload file `.txt`, `.md`, `.json`, `.pdf` hoặc `.docx`. Với `.json`, app hỗ trợ dạng danh sách tài liệu hoặc object có khóa `documents`. Dữ liệu upload riêng được lưu vào `data/user_docs.local.json` và đã được ignore khỏi git.
+Mock mode giúp demo chạy ổn định ngay cả khi không có API key:
 
-## Demo Sprint 3
-
-1. Mở tab `Kho tri thức`.
-2. Bấm `Nạp tài liệu mẫu`.
-3. Bấm `Chạy test truy xuất Sprint 3`.
-4. Kết quả kỳ vọng: đạt `5/5` test, các tài liệu `CV-MAU-002`, `TB-MAU-002`, `TT-MAU-002`, `QD-MAU-002`, `CV-MAU-003` đều xuất hiện đúng trong top 3.
-
-Có thể thử truy vấn không dấu:
-
-```text
-cong van moi tham du hoi nghi so ket
+```env
+LLM_PROVIDER=mock
 ```
 
-Kết quả kỳ vọng: `CV-MAU-003` xuất hiện ở nhóm kết quả đầu.
-
-Có thể thử truy vấn ngoài phạm vi:
-
-```text
-ky so tu dong lien thong quoc gia
-```
-
-Kết quả kỳ vọng: app cảnh báo chưa có nguồn đủ phù hợp thay vì tự lấy nguồn yếu.
-
-## Demo Sprint 4
-
-1. Mở tab `Kho tri thức`.
-2. Bấm `Nạp tài liệu mẫu`.
-3. Bấm `Chạy test generator Sprint 4`.
-4. Kết quả kỳ vọng: đạt `5/5` test generator.
-
-Sau đó mở tab `Soạn thảo`, lần lượt chọn các loại văn bản và nhập các câu sau:
-
-```text
-soạn công văn đề nghị cung cấp số liệu chuyển đổi số
-thông báo tổ chức tập huấn an toàn thông tin
-tờ trình phê duyệt kế hoạch triển khai phần mềm nội bộ
-quyết định thành lập tổ triển khai dự án công nghệ thông tin
-```
-
-Kết quả kỳ vọng: mỗi loại văn bản có bố cục riêng, có marker nguồn như `[S1]`, và có danh sách `Nguồn tham khảo`.
-
-Ca không có nguồn:
-
-```text
-soạn công văn về ký số tự động liên thông quốc gia
-```
-
-Kết quả kỳ vọng: app sinh cảnh báo `CHƯA ĐỦ NGUỒN KIỂM CHỨNG` thay vì tạo bản nháp hoàn chỉnh.
-
-## Demo Sprint 5
-
-Mock mode vẫn là mặc định, nên app chạy được ngay cả khi chưa có API key.
-
-Khuyến nghị cho demo free là Gemini Flash-Lite. Tạo file `.env` trong thư mục dự án:
+Dùng Gemini:
 
 ```env
 LLM_PROVIDER=gemini
-GEMINI_API_KEY=your_new_key_here
+GEMINI_API_KEY=your_key_here
 GEMINI_MODEL=gemini-2.5-flash-lite
+GEMINI_TIMEOUT_SECONDS=30
 GEMINI_MAX_OUTPUT_TOKENS=1800
 ```
 
-Sau đó chạy lại app:
-
-```powershell
-.\.venv\Scripts\python -m streamlit run app.py
-```
-
-Nếu muốn dùng OpenAI thay Gemini, cấu hình:
+Dùng OpenAI:
 
 ```env
 LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-...
-OPENAI_MODEL=your_openai_model
+OPENAI_API_KEY=your_key_here
+OPENAI_MODEL=your_model_here
 OPENAI_TIMEOUT_SECONDS=30
 OPENAI_MAX_OUTPUT_TOKENS=1800
 ```
 
-Kịch bản demo:
+Không commit `.env` lên git.
 
-1. Chưa tạo `.env`: sidebar hiển thị `Mock mode`, app vẫn sinh bản nháp.
-2. Tạo `.env` với `LLM_PROVIDER=gemini` nhưng để trống `GEMINI_API_KEY`: app fallback sang mock và hiện cảnh báo thiếu key.
-3. Tạo `.env` có Gemini API key hợp lệ: app gọi Gemini để sinh bản nháp.
-4. Nhập truy vấn không có nguồn phù hợp: app không gọi LLM và trả cảnh báo chưa đủ nguồn kiểm chứng.
+## Cấu hình truy xuất hybrid
 
-## Demo Sprint 6
+Mặc định hệ thống chạy `RETRIEVAL_MODE=hybrid`: BM25 giữ độ chính xác từ khóa, vector search hỗ trợ truy vấn gần nghĩa. Vector index được lưu cùng SQLite local tại `data/knowledge.sqlite`.
 
-1. Mở tab `Kho tri thức`.
-2. Bấm `Nạp tài liệu mẫu`.
-3. Bấm `Chạy test chất lượng Sprint 6`.
-4. Kết quả kỳ vọng: đạt `5/5` test chất lượng.
+```env
+RETRIEVAL_MODE=hybrid
+HYBRID_BM25_WEIGHT=0.7
+HYBRID_VECTOR_WEIGHT=0.3
+VECTOR_DB_PATH=data/knowledge.sqlite
+HYBRID_ALLOW_VECTOR_ONLY=false
+EMBEDDING_PROVIDER=local_hash
+EMBEDDING_DIMENSIONS=384
+```
 
-Sau đó mở tab `Soạn thảo`, nhập:
+`local_hash` chạy offline để demo không cần API key. App mặc định dùng hybrid và không nhận nguồn chỉ có vector để tránh kéo nhầm nguồn yếu vào bản nháp. Khi cần tìm kiếm ngữ nghĩa tốt hơn, có thể đổi sang OpenAI embedding:
+
+```env
+EMBEDDING_PROVIDER=openai
+OPENAI_API_KEY=your_key_here
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+```
+
+Trong giao diện người dùng không cần chọn thuật toán truy xuất; hệ thống tự chạy hybrid. Phần `Nâng cao` vẫn có nút tạo lại chỉ mục vector khi dữ liệu thay đổi nhiều.
+
+## Demo nhanh
+
+Luồng công văn:
 
 ```text
 soạn công văn đề nghị cung cấp số liệu chuyển đổi số
 ```
 
-Kết quả kỳ vọng: app hiển thị `Checklist chất lượng`, điểm chất lượng và mức rủi ro thấp/trung bình.
-Ở sidebar, nhập `Cơ quan chủ quản`, `Cơ quan ban hành`, `Địa danh`, rồi bấm `Tải bản nháp DOCX chuẩn thể thức`.
+Luồng tự động nhận diện giấy nghỉ phép:
 
-File DOCX xuất ra có khổ A4, font Times New Roman, lề trái 30 mm, lề phải 15 mm, lề trên/dưới 20 mm, cỡ chữ nội dung 13, giãn dòng 1.15, giãn đoạn sau 6 pt, quốc hiệu/tiêu ngữ căn giữa, số trang căn giữa ở lề trên và ẩn ở trang đầu.
+```text
+Xuân Tịnh xin nghỉ 4 ngày vì bị ốm
+```
 
 Ca thiếu nguồn:
 
@@ -175,37 +224,44 @@ Ca thiếu nguồn:
 soạn công văn về ký số tự động liên thông quốc gia
 ```
 
-Kết quả kỳ vọng: app đánh dấu rủi ro `Cao` và cảnh báo cần bổ sung nguồn.
-
-## Demo Sprint 7
-
-Mục tiêu demo trong 3-5 phút: cho thấy app đã có luồng hoàn chỉnh từ nạp dữ liệu, lọc nguồn, sinh nháp, kiểm tra chất lượng đến tải file.
-
-1. Mở tab `Kho tri thức`, bấm `Nạp tài liệu mẫu`.
-2. Trong sidebar, chọn `Nguồn dùng khi soạn` là `Tất cả nguồn`.
-3. Mở tab `Soạn thảo`, chọn `Công văn`, nhập:
-
-```text
-soạn công văn đề nghị cung cấp số liệu chuyển đổi số
-```
-
-4. Bấm `Tạo bản nháp`, kiểm tra `Nguồn truy xuất`, `Checklist chất lượng`, sau đó tải thử cả `TXT` và `DOCX`.
-5. Quay lại tab `Kho tri thức`, upload một file `.txt/.md/.json` riêng. File upload sẽ được gắn nhãn `Upload riêng`.
-6. Trong sidebar, đổi `Nguồn dùng khi soạn` thành `Chỉ tài liệu upload` để chứng minh app có thể lọc nguồn.
-7. Bấm `Xóa upload riêng` để xóa tài liệu người dùng khỏi phiên làm việc.
-
-Kịch bản demo nhanh nằm ở `DEMO_SCRIPT.md`; bộ câu lệnh mẫu nằm ở `data/demo_queries.json`. Kế hoạch chỉnh sửa và khung báo cáo nằm trong thư mục `docs/`.
+Kịch bản demo chi tiết nằm ở `DEMO_SCRIPT.md`. Nội dung thuyết trình và câu hỏi vấn đáp nằm ở `docs/THUYET_TRINH_PROJECT_ADMIN_DOC_RAG.md`.
 
 ## Crawl dữ liệu công khai
 
-`crawler.py` là công cụ phụ để mở rộng kho tri thức, không bắt buộc cho demo chính. Script có thể đọc nguồn từ `data/raw/manifest.json`, tìm file đính kèm `.doc`, `.docx`, `.pdf`, `.txt`, trích text và lưu JSON vào `data/processed/`.
+Script crawl trong nhánh lab:
 
 ```powershell
-.\.venv\Scripts\python crawler.py --headless --manifest data/raw/manifest.json --output data/processed/crawled_admin_docs.json
+.\.venv\Scripts\python scripts\crawl_public_sources.py --manifest data\raw\manifest.json --output data\processed\crawled_public_docs.json
 ```
 
-Sau khi crawl, kiểm tra thủ công nội dung trước khi upload/nạp vào app để tránh dữ liệu rác hoặc nguồn không phù hợp.
+Lưu ý:
 
-## Ghi chú phạm vi
+- Crawl chỉ là phần mở rộng kho tri thức, không bắt buộc cho demo chính.
+- PDF scan hoặc file `.doc` cũ có thể trích xuất kém.
+- Nội dung sau crawl cần được kiểm tra thủ công trước khi dùng làm nguồn chính thức.
 
-Bản này mặc định chạy ở mock mode để demo ổn định, đồng thời có thể gọi OpenAI API khi cấu hình `.env`. Dữ liệu mẫu trong `data/` dùng cho trình diễn kỹ thuật, cần thay bằng văn bản công khai đã kiểm chứng khi làm bản nộp cuối.
+## Kiểm thử nhanh
+
+```powershell
+.\.venv\Scripts\python -m compileall -q app.py src scripts\crawl_public_sources.py crawler.py data_auditor.py
+```
+
+Bộ test demo nằm trong:
+
+- `data/extraction_test_cases.json`
+- `data/retrieval_test_cases.json` - gồm test truy xuất toàn danh mục loại văn bản.
+- `data/generation_test_cases.json`
+- `data/form_test_cases.json` - phủ 30/30 loại văn bản trong catalog.
+
+## Tài liệu quản lý dự án
+
+- `SPRINTS.md`: kế hoạch sprint, tiêu chí nghiệm thu, trạng thái từng sprint.
+- `DEMO_SCRIPT.md`: kịch bản demo ngắn 3-5 phút.
+- `docs/THUYET_TRINH_PROJECT_ADMIN_DOC_RAG.md`: nội dung thuyết trình và bộ câu hỏi có thể bị hỏi.
+- `docs/BAO_CAO_KINH_TE_KY_THUAT_KHUNG.md`: khung báo cáo kinh tế kỹ thuật.
+- `docs/BAO_CAO_DU_TOAN_KHUNG.md`: khung dự toán.
+- `docs/KE_HOACH_CHINH_SUA_DEMO.md`: kế hoạch chỉnh sửa demo.
+
+## Phạm vi và giới hạn
+
+Sản phẩm hiện là prototype học thuật. Hệ thống chỉ hỗ trợ tạo bản nháp, không tự ban hành văn bản, không ký số, không thay thế trách nhiệm kiểm duyệt của người có thẩm quyền. Khi triển khai thật cần bổ sung phân quyền, kiểm duyệt nguồn, nhật ký thao tác, bảo mật dữ liệu, OCR tốt hơn và quy trình pháp lý rõ ràng.

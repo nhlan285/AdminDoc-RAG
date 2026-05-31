@@ -1,4 +1,5 @@
 from __future__ import annotations
+from dataclasses import replace
 import html
 import json
 from pathlib import Path
@@ -8,9 +9,11 @@ from src.documents import Document, load_documents
 from src.docx_exporter import export_draft_to_docx
 from src.evaluation import (
     load_extraction_test_cases,
+    load_form_test_cases,
     load_generation_test_cases,
     load_retrieval_test_cases,
     run_extraction_tests,
+    run_form_tests,
     run_quality_tests,
     run_generation_tests,
     run_retrieval_tests,
@@ -19,15 +22,18 @@ from src.extractor import analysis_to_rows, analyze_request
 from src.llm import LLMConfig, describe_llm_status, generate_draft, load_llm_config
 from src.preprocessing import build_chunks, extract_text_from_binary, parse_documents_from_text
 from src.quality import evaluate_draft, report_to_rows
-from src.retriever import retrieve
+from src.retriever import describe_retrieval_status, rebuild_vector_index, retrieve
+from src.slot_normalizer import normalize_slots
 from src.storage import KnowledgeStore
 
 BASE_DIR = Path(__file__).parent
 DATA_PATH = BASE_DIR / "data" / "admin_docs.json"
 SPRINT2_SAMPLE_PATH = BASE_DIR / "data" / "sprint2_sample_docs.json"
+DOC_TYPE_SEED_PATH = BASE_DIR / "data" / "doc_type_seed_docs.json"
 RETRIEVAL_TEST_CASES_PATH = BASE_DIR / "data" / "retrieval_test_cases.json"
 GENERATION_TEST_CASES_PATH = BASE_DIR / "data" / "generation_test_cases.json"
 EXTRACTION_TEST_CASES_PATH = BASE_DIR / "data" / "extraction_test_cases.json"
+FORM_TEST_CASES_PATH = BASE_DIR / "data" / "form_test_cases.json"
 USER_DATA_PATH = BASE_DIR / "data" / "user_docs.local.json"
 TEMPLATE_DIR = BASE_DIR / "data" / "templates"
 PROCESSED_DIR = BASE_DIR / "data" / "processed"
@@ -477,6 +483,8 @@ def get_base_documents() -> list[Document]: return load_documents(DATA_PATH)
 @st.cache_data
 def get_sprint2_sample_documents() -> list[Document]: return load_documents(SPRINT2_SAMPLE_PATH)
 @st.cache_data
+def get_doc_type_seed_documents() -> list[Document]: return load_documents(DOC_TYPE_SEED_PATH)
+@st.cache_data
 def get_template_documents() -> list[Document]:
     documents: list[Document] = []
     if not TEMPLATE_DIR.exists():
@@ -510,6 +518,8 @@ def get_retrieval_test_cases(): return load_retrieval_test_cases(RETRIEVAL_TEST_
 def get_generation_test_cases(): return load_generation_test_cases(GENERATION_TEST_CASES_PATH)
 @st.cache_data
 def get_extraction_test_cases(): return load_extraction_test_cases(EXTRACTION_TEST_CASES_PATH)
+@st.cache_data
+def get_form_test_cases(): return load_form_test_cases(FORM_TEST_CASES_PATH)
 
 
 def _render_workspace_header(*, chunks: list[Document], active_chunks: list[Document], source_scope_label: str) -> None:
@@ -573,6 +583,7 @@ def main() -> None:
             active_documents=active_chunks,
             doc_type=settings["doc_type"],
             top_k=settings["top_k"],
+            retrieval_mode=settings["retrieval_mode"],
             llm_config=llm_config,
             auto_detect_request=settings["auto_detect_request"],
             agency_parent=settings["agency_parent"],
@@ -600,6 +611,7 @@ def _reset_knowledge_base() -> None:
     base_chunks = build_chunks(
         get_base_documents()
         + get_sprint2_sample_documents()
+        + get_doc_type_seed_documents()
         + get_template_documents()
         + get_processed_documents()
     )
@@ -694,6 +706,7 @@ def _render_sources_panel(*, chunks: list[Document], llm_config: LLMConfig) -> d
             key="source_auto_detect",
         )
         top_k = st.slider("Số nguồn truy xuất", 1, 8, 3, key="source_top_k")
+        retrieval_mode = "hybrid"
         source_scope_label = st.selectbox(
             "Nguồn dùng khi soạn",
             list(SOURCE_SCOPE_OPTIONS),
@@ -718,6 +731,7 @@ def _render_sources_panel(*, chunks: list[Document], llm_config: LLMConfig) -> d
             unsafe_allow_html=True,
         )
         st.caption(describe_llm_status(llm_config))
+        st.caption(describe_retrieval_status(BASE_DIR))
 
         with st.expander("Thông tin xuất DOCX", expanded=False):
             agency_parent = st.text_input(
@@ -746,11 +760,20 @@ def _render_sources_panel(*, chunks: list[Document], llm_config: LLMConfig) -> d
             if admin_right.button("Reset kho", use_container_width=True):
                 _reset_knowledge_base()
                 chunks = _current_chunks()
+            if st.button("Tạo lại chỉ mục vector", use_container_width=True):
+                try:
+                    stats = rebuild_vector_index(_current_chunks(), project_root=BASE_DIR)
+                    st.success(
+                        f"Vector index: {stats.indexed} chunk, làm mới {stats.refreshed}, xóa {stats.removed}."
+                    )
+                except Exception as error:
+                    st.warning(f"Chưa thể tạo vector index: {error}")
 
     return {
         "doc_type": doc_type,
         "auto_detect_request": auto_detect_request,
         "top_k": top_k,
+        "retrieval_mode": retrieval_mode,
         "source_scope_label": source_scope_label,
         "source_scope": source_scope,
         "agency_parent": agency_parent,
@@ -805,7 +828,7 @@ def _render_retrieved_sources_preview(results) -> None:
             f"""
             <div class="source-card">
               <div class="source-title">{index}. {_escape(result.document.title or result.document.id)}</div>
-              <div class="source-meta">{_escape(result.document.doc_type)} · <span class="source-score">Điểm {result.score:.3f}</span></div>
+              <div class="source-meta">{_escape(result.document.doc_type)} · {_escape(getattr(result, "retrieval_method", "bm25"))} · <span class="source-score">Điểm {result.score:.3f}</span></div>
               <div class="source-meta">Từ khóa: {_escape(", ".join(result.matched_terms) or "không có")}</div>
             </div>
             """,
@@ -823,6 +846,7 @@ def _render_chat_panel(
     active_documents,
     doc_type,
     top_k,
+    retrieval_mode,
     llm_config,
     auto_detect_request,
     agency_parent,
@@ -859,19 +883,32 @@ def _render_chat_panel(
             if documents and not active_documents:
                 st.warning("Không có tài liệu trong phạm vi lọc.")
                 return
-            _generate_draft_workspace(
+            _start_draft_or_clarification(
                 query=query,
                 documents=documents,
                 active_documents=active_documents,
                 doc_type=doc_type,
                 top_k=top_k,
+                retrieval_mode=retrieval_mode,
                 llm_config=llm_config,
                 auto_detect_request=auto_detect_request,
             )
             st.rerun()
 
+        pending_clarification = st.session_state.get("pending_clarification")
         workspace = st.session_state.get("last_draft_workspace")
-        if workspace:
+        if pending_clarification:
+            _render_clarification_panel(
+                pending=pending_clarification,
+                documents=documents,
+                active_documents=active_documents,
+                doc_type=doc_type,
+                top_k=top_k,
+                retrieval_mode=retrieval_mode,
+                llm_config=llm_config,
+                auto_detect_request=auto_detect_request,
+            )
+        elif workspace:
             _render_chat_draft(
                 workspace=workspace,
                 agency_parent=agency_parent,
@@ -894,6 +931,152 @@ def _render_chat_panel(
             )
 
 
+def _start_draft_or_clarification(
+    *,
+    query: str,
+    documents,
+    active_documents,
+    doc_type,
+    top_k,
+    retrieval_mode,
+    llm_config,
+    auto_detect_request,
+) -> None:
+    analysis = analyze_request(query, default_doc_type=doc_type)
+    effective_doc_type = (
+        analysis.detected_doc_type
+        if auto_detect_request and analysis.confidence >= 0.5
+        else doc_type
+    )
+    if analysis.missing_fields:
+        clarification_id = int(st.session_state.get("clarification_index", 0)) + 1
+        st.session_state["clarification_index"] = clarification_id
+        st.session_state["pending_clarification"] = {
+            "id": clarification_id,
+            "query": query,
+            "analysis": analysis,
+            "effective_doc_type": effective_doc_type,
+            "selected_doc_type": doc_type,
+        }
+        st.session_state.pop("last_draft_workspace", None)
+        return
+
+    st.session_state.pop("pending_clarification", None)
+    _generate_draft_workspace(
+        query=query,
+        documents=documents,
+        active_documents=active_documents,
+        doc_type=doc_type,
+        top_k=top_k,
+        retrieval_mode=retrieval_mode,
+        llm_config=llm_config,
+        auto_detect_request=auto_detect_request,
+        analysis_override=analysis,
+        effective_doc_type_override=effective_doc_type,
+    )
+
+
+def _render_clarification_panel(
+    *,
+    pending,
+    documents,
+    active_documents,
+    doc_type,
+    top_k,
+    retrieval_mode,
+    llm_config,
+    auto_detect_request,
+) -> None:
+    query = pending["query"]
+    analysis = pending["analysis"]
+    effective_doc_type = pending["effective_doc_type"]
+    clarification_id = pending.get("id", "current")
+    fields_to_ask = list(analysis.missing_fields[:3])
+    if not fields_to_ask:
+        st.session_state.pop("pending_clarification", None)
+        _generate_draft_workspace(
+            query=query,
+            documents=documents,
+            active_documents=active_documents,
+            doc_type=doc_type,
+            top_k=top_k,
+            retrieval_mode=retrieval_mode,
+            llm_config=llm_config,
+            auto_detect_request=auto_detect_request,
+            analysis_override=analysis,
+            effective_doc_type_override=effective_doc_type,
+        )
+        st.rerun()
+
+    st.markdown('<div class="section-title">Cần bổ sung thông tin</div>', unsafe_allow_html=True)
+    st.info(
+        f"Hệ thống nhận diện loại văn bản là {effective_doc_type} và cần thêm "
+        f"{len(fields_to_ask)} thông tin trước khi tạo bản nháp đầy đủ hơn."
+    )
+    with st.form("clarification_form", clear_on_submit=False):
+        answers = {}
+        for field in fields_to_ask:
+            answers[field] = st.text_input(
+                _clarification_label(field),
+                value=analysis.slots.get(field, ""),
+                key=f"clarify_{clarification_id}_{field}",
+                placeholder=_clarification_placeholder(field),
+            )
+        submit_col, skip_col = st.columns(2)
+        with submit_col:
+            submit = st.form_submit_button(
+                "Bổ sung và tạo bản nháp",
+                type="primary",
+                use_container_width=True,
+            )
+        with skip_col:
+            skip = st.form_submit_button(
+                "Tạo với placeholder",
+                use_container_width=True,
+            )
+
+    if submit:
+        cleaned_answers = {
+            field: value.strip()
+            for field, value in answers.items()
+            if value and value.strip()
+        }
+        if not cleaned_answers:
+            st.warning("Hãy nhập ít nhất một thông tin, hoặc chọn tạo với placeholder.")
+            return
+        updated_analysis = _apply_clarification_answers(analysis, cleaned_answers)
+        st.session_state.pop("pending_clarification", None)
+        _generate_draft_workspace(
+            query=query,
+            documents=documents,
+            active_documents=active_documents,
+            doc_type=doc_type,
+            top_k=top_k,
+            retrieval_mode=retrieval_mode,
+            llm_config=llm_config,
+            auto_detect_request=auto_detect_request,
+            analysis_override=updated_analysis,
+            effective_doc_type_override=effective_doc_type,
+        )
+        st.rerun()
+
+    if skip:
+        st.session_state.pop("pending_clarification", None)
+        _generate_draft_workspace(
+            query=query,
+            documents=documents,
+            active_documents=active_documents,
+            doc_type=doc_type,
+            top_k=top_k,
+            retrieval_mode=retrieval_mode,
+            llm_config=llm_config,
+            auto_detect_request=auto_detect_request,
+            analysis_override=analysis,
+            effective_doc_type_override=effective_doc_type,
+        )
+        st.rerun()
+
+
 def _generate_draft_workspace(
     *,
     query: str,
@@ -901,11 +1084,14 @@ def _generate_draft_workspace(
     active_documents,
     doc_type,
     top_k,
+    retrieval_mode,
     llm_config,
     auto_detect_request,
+    analysis_override=None,
+    effective_doc_type_override=None,
 ) -> None:
-    analysis = analyze_request(query, default_doc_type=doc_type)
-    effective_doc_type = (
+    analysis = analysis_override or analyze_request(query, default_doc_type=doc_type)
+    effective_doc_type = effective_doc_type_override or (
         analysis.detected_doc_type
         if auto_detect_request and analysis.confidence >= 0.5
         else doc_type
@@ -916,6 +1102,8 @@ def _generate_draft_workspace(
         active_documents,
         doc_type=effective_doc_type,
         top_k=top_k,
+        mode=retrieval_mode,
+        project_root=BASE_DIR,
     )
     draft_result = generate_draft(
         request=query,
@@ -939,10 +1127,79 @@ def _generate_draft_workspace(
         "effective_doc_type": effective_doc_type,
         "selected_doc_type": doc_type,
         "results": results,
+        "retrieval_mode": retrieval_mode,
         "draft_result": draft_result,
         "quality_report": quality_report,
         "editor_key": editor_key,
     }
+
+
+def _apply_clarification_answers(analysis, answers: dict[str, str]):
+    slots = dict(analysis.slots)
+    slots.update(answers)
+    slots = normalize_slots(analysis.detected_doc_type, slots)
+    remaining_missing = [
+        field for field in analysis.missing_fields if not slots.get(field)
+    ]
+    answer_text = " ".join(answers.values())
+    retrieval_query = " ".join(
+        part for part in [analysis.retrieval_query, answer_text] if part
+    ).strip()
+    notes = list(analysis.notes)
+    notes.append("Người dùng đã bổ sung: " + ", ".join(sorted(answers)))
+    return replace(
+        analysis,
+        slots=slots,
+        missing_fields=remaining_missing,
+        retrieval_query=retrieval_query,
+        notes=notes,
+    )
+
+
+def _clarification_label(field: str) -> str:
+    labels = {
+        "subject_name": "Họ tên người liên quan",
+        "leave_days": "Số ngày nghỉ",
+        "start_date": "Ngày bắt đầu",
+        "end_date": "Ngày kết thúc",
+        "reason": "Lý do",
+        "recipient": "Nơi nhận / Kính gửi",
+        "topic": "Nội dung chính",
+        "approval_target": "Cơ quan/người phê duyệt",
+        "invitee": "Người/đơn vị được mời",
+        "event_name": "Tên sự kiện/cuộc họp",
+        "event_time": "Thời gian",
+        "event_location": "Địa điểm",
+        "destination": "Nơi đến",
+        "purpose": "Mục đích",
+        "position": "Chức vụ",
+        "department": "Đơn vị công tác",
+        "handover_person": "Người nhận bàn giao",
+        "legal_basis": "Căn cứ pháp lý",
+        "responsible_unit": "Đơn vị chịu trách nhiệm",
+        "effective_date": "Ngày hiệu lực",
+    }
+    return labels.get(field, field.replace("_", " ").title())
+
+
+def _clarification_placeholder(field: str) -> str:
+    placeholders = {
+        "subject_name": "Ví dụ: Nguyễn Văn A",
+        "leave_days": "Ví dụ: 4",
+        "start_date": "Ví dụ: 03/06/2026",
+        "end_date": "Ví dụ: 06/06/2026",
+        "reason": "Ví dụ: Ốm đau, cần điều trị",
+        "recipient": "Ví dụ: Phòng Tổ chức - Hành chính",
+        "topic": "Ví dụ: cung cấp số liệu chuyển đổi số",
+        "approval_target": "Ví dụ: Ban Giám đốc",
+        "invitee": "Ví dụ: Trưởng các đơn vị trực thuộc",
+        "event_name": "Ví dụ: Hội nghị sơ kết",
+        "event_time": "Ví dụ: 08:00 ngày 05/06/2026",
+        "event_location": "Ví dụ: Hội trường tầng 3",
+        "destination": "Ví dụ: Sở Nội vụ",
+        "purpose": "Ví dụ: liên hệ công tác",
+    }
+    return placeholders.get(field, "Nhập thông tin bổ sung")
 
 
 def _render_chat_draft(*, workspace, agency_parent, agency_name, place_name) -> None:
@@ -951,6 +1208,7 @@ def _render_chat_draft(*, workspace, agency_parent, agency_name, place_name) -> 
     selected_doc_type = workspace["selected_doc_type"]
     results = workspace["results"]
     draft_result = workspace["draft_result"]
+    retrieval_mode = workspace.get("retrieval_mode", "hybrid")
 
     st.markdown(
         f"""
@@ -958,6 +1216,7 @@ def _render_chat_draft(*, workspace, agency_parent, agency_name, place_name) -> 
           <span class="pill">Yêu cầu: {_escape(query[:96])}</span>
           <span class="pill">Loại: {_escape(effective_doc_type)}</span>
           <span class="pill">Nguồn: {len(results)}</span>
+          <span class="pill">Truy xuất: {_escape(retrieval_mode)}</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1005,6 +1264,18 @@ def _render_chat_draft(*, workspace, agency_parent, agency_name, place_name) -> 
         use_container_width=True,
     )
 
+    live_quality_report = evaluate_draft(
+        draft=edited_draft,
+        doc_type=effective_doc_type,
+        search_results=results,
+    )
+    workspace["quality_report"] = live_quality_report
+    _render_quality_report(
+        live_quality_report,
+        source_count=len(results),
+        retrieval_mode=retrieval_mode,
+    )
+
 
 def _render_studio_panel(*, chunks: list[Document], active_chunks: list[Document], source_scope_label: str) -> None:
     workspace = st.session_state.get("last_draft_workspace")
@@ -1031,7 +1302,7 @@ def _render_studio_panel(*, chunks: list[Document], active_chunks: list[Document
 
         if workspace:
             _render_analysis_panel(workspace["analysis"])
-            _render_quality_report(workspace["quality_report"])
+            _render_quality_report(workspace["quality_report"], compact=True)
         else:
             st.markdown(
                 """
@@ -1170,7 +1441,13 @@ def _render_draft_workspace(*, workspace, agency_parent, agency_name, place_name
         _render_analysis_panel(analysis)
         _render_search_results(results)
 
-    _render_quality_report(quality_report)
+    live_quality_report = evaluate_draft(
+        draft=edited_draft,
+        doc_type=effective_doc_type,
+        search_results=results,
+    )
+    workspace["quality_report"] = live_quality_report
+    _render_quality_report(live_quality_report, source_count=len(results))
 
 def _render_analysis_panel(analysis) -> None:
     st.markdown('<div class="section-title">Phân tích yêu cầu</div>', unsafe_allow_html=True)
@@ -1266,7 +1543,7 @@ def _render_search_results(results):
             f"""
             <div class="source-card">
               <div class="source-title">{_escape(r.document.title or r.document.id)}</div>
-              <div class="source-meta">{_escape(r.document.doc_type)} · {_escape(SOURCE_KIND_LABELS.get(r.document.source_kind, r.document.source_kind))} · Điểm {r.score:.3f}</div>
+              <div class="source-meta">{_escape(r.document.doc_type)} · {_escape(SOURCE_KIND_LABELS.get(r.document.source_kind, r.document.source_kind))} · {_escape(getattr(r, "retrieval_method", "bm25"))} · Điểm {r.score:.3f}</div>
               <div class="source-meta">Từ khóa: {_escape(", ".join(r.matched_terms) or "không có")}</div>
             </div>
             """,
@@ -1275,15 +1552,79 @@ def _render_search_results(results):
         with st.expander("Xem đoạn nguồn"):
             st.write(r.document.content)
 
-def _render_quality_report(report):
+def _render_quality_report(
+    report,
+    *,
+    compact: bool = False,
+    source_count: int | None = None,
+    retrieval_mode: str | None = None,
+) -> None:
     st.markdown('<div class="section-title">Chất lượng bản nháp</div>', unsafe_allow_html=True)
-    c1, c2, c3 = st.columns([1, 1, 2])
+    all_rows = report_to_rows(report)
+    failed_checks = [check for check in report.checks if not check.passed]
+    failed_rows = [
+        row
+        for row, check in zip(all_rows, report.checks)
+        if not check.passed
+    ]
+
+    if compact:
+        c1, c2, c3 = st.columns([1, 1, 2])
+        c1.metric("Điểm", f"{report.score}/100")
+        c2.metric("Rủi ro", report.risk_level)
+        c3.metric("Mục cần kiểm tra", len(failed_checks))
+        rows_to_show = failed_rows or all_rows
+        st.dataframe(
+            rows_to_show,
+            use_container_width=True,
+            hide_index=True,
+            height=260,
+        )
+        return
+
+    metric_columns = st.columns(4)
+    c1, c2, c3, c4 = metric_columns
     c1.metric("Điểm", f"{report.score}/100")
     c2.metric("Rủi ro", report.risk_level)
-    failed = len([check for check in report.checks if not check.passed])
-    c3.metric("Mục cần kiểm tra", failed)
-    with st.container(border=True):
-        st.dataframe(report_to_rows(report), use_container_width=True, hide_index=True)
+    c3.metric("Mục cần kiểm tra", len(failed_checks))
+    if source_count is None:
+        c4.metric("Checklist", len(report.checks))
+    else:
+        source_label = f"{source_count}"
+        if retrieval_mode:
+            source_label = f"{source_count} ({retrieval_mode})"
+        c4.metric("Nguồn dùng", source_label)
+
+    if failed_rows:
+        st.warning("Các mục dưới đây cần rà soát trước khi tải hoặc ban hành bản nháp.")
+        st.dataframe(
+            failed_rows,
+            use_container_width=True,
+            hide_index=True,
+            height=min(260, 80 + len(failed_rows) * 48),
+            column_config={
+                "status": st.column_config.TextColumn("Trạng thái", width="small"),
+                "severity": st.column_config.TextColumn("Mức", width="small"),
+                "check": st.column_config.TextColumn("Hạng mục", width="medium"),
+                "message": st.column_config.TextColumn("Gợi ý rà soát", width="large"),
+            },
+        )
+    else:
+        st.success("Không phát hiện mục lỗi trong checklist tự động.")
+
+    with st.expander("Xem toàn bộ checklist đánh giá", expanded=not failed_rows):
+        st.dataframe(
+            all_rows,
+            use_container_width=True,
+            hide_index=True,
+            height=min(460, 90 + len(all_rows) * 42),
+            column_config={
+                "status": st.column_config.TextColumn("Trạng thái", width="small"),
+                "severity": st.column_config.TextColumn("Mức", width="small"),
+                "check": st.column_config.TextColumn("Hạng mục", width="medium"),
+                "message": st.column_config.TextColumn("Thông điệp", width="large"),
+            },
+        )
 
 def _chunk_rows(chunks):
     return [
@@ -1298,16 +1639,18 @@ def _chunk_rows(chunks):
     ]
 
 def _render_test_panel(chunks) -> None:
-    with st.expander("Kiểm thử demo Sprint 3/4/6", expanded=False):
-        t1, t2, t3, t4 = st.columns(4)
-        if t1.button("Chạy test truy xuất Sprint 3", use_container_width=True):
-            _store_test_result("Truy xuất Sprint 3", run_retrieval_tests(get_retrieval_test_cases(), chunks))
+    with st.expander("Kiểm thử demo Sprint 3/4/6/11/12", expanded=False):
+        t1, t2, t3, t4, t5 = st.columns(5)
+        if t1.button("Chạy test truy xuất toàn danh mục", use_container_width=True):
+            _store_test_result("Truy xuất toàn danh mục", run_retrieval_tests(get_retrieval_test_cases(), chunks))
         if t2.button("Chạy test generator Sprint 4", use_container_width=True):
             _store_test_result("Generator Sprint 4", run_generation_tests(get_generation_test_cases(), chunks))
         if t3.button("Chạy test chất lượng Sprint 6", use_container_width=True):
             _store_test_result("Chất lượng Sprint 6", run_quality_tests(get_generation_test_cases(), chunks))
         if t4.button("Chạy test phân tích yêu cầu", use_container_width=True):
             _store_test_result("Phân tích yêu cầu", run_extraction_tests(get_extraction_test_cases()))
+        if t5.button("Chạy test form", use_container_width=True):
+            _store_test_result("Form/template", run_form_tests(get_form_test_cases(), chunks))
 
         test_result = st.session_state.get("last_test_result")
         if test_result:

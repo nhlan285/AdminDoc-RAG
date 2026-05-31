@@ -30,6 +30,7 @@ def evaluate_draft(
 ) -> QualityReport:
     checks: list[QualityCheck] = []
     checks.extend(_format_checks(draft, doc_type))
+    checks.extend(_form_consistency_checks(draft, doc_type))
     checks.extend(_citation_checks(draft, search_results))
     checks.extend(_hallucination_checks(draft, search_results))
     checks.append(_human_review_check(draft))
@@ -82,6 +83,70 @@ def _format_checks(draft: str, doc_type: str) -> list[QualityCheck]:
                 passed=fragment.lower() in text,
                 severity="high",
                 message=f"Cần có thành phần: {fragment}",
+            )
+        )
+
+    return checks
+
+
+def _form_consistency_checks(draft: str, doc_type: str) -> list[QualityCheck]:
+    text = draft.lower()
+    duplicated_time_prefix = re.search(
+        r"\b(từ|đến|kể từ)\s+(từ|đến|kể từ|ngày)\s+ngày\b",
+        text,
+    ) or re.search(r"\b(từ|đến|kể từ)\s+\1\b", text)
+    slash_dates = re.findall(r"\b\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?\b", draft)
+    non_standard_dates = [
+        value
+        for value in slash_dates
+        if not re.fullmatch(r"\d{2}/\d{2}/\d{4}", value)
+    ]
+    checks = [
+        QualityCheck(
+            name="Cụm thời gian không lặp",
+            passed=not duplicated_time_prefix,
+            severity="medium",
+            message=(
+                "Không phát hiện cụm thời gian bị lặp."
+                if not duplicated_time_prefix
+                else "Có cụm thời gian bị lặp như 'từ từ ngày' hoặc 'đến đến ngày'."
+            ),
+        ),
+        QualityCheck(
+            name="Định dạng ngày nhập liệu",
+            passed=not non_standard_dates,
+            severity="medium",
+            message=(
+                "Các ngày dạng số đã theo dd/mm/yyyy."
+                if not non_standard_dates
+                else "Ngày chưa thống nhất định dạng dd/mm/yyyy: "
+                + ", ".join(sorted(set(non_standard_dates)))
+            ),
+        ),
+        QualityCheck(
+            name="Placeholder template",
+            passed="{{" not in draft and "}}" not in draft,
+            severity="high",
+            message="Không còn placeholder template dạng {{...}}.",
+        ),
+    ]
+
+    if doc_type == "Giấy nghỉ phép":
+        leave_line = _find_line(draft, "Được nghỉ phép trong thời gian")
+        has_duration_and_start = bool(
+            re.search(r"\d+\s+ngày", leave_line)
+            and re.search(r"từ\s+\d{2}/\d{2}/\d{4}", leave_line.lower())
+        )
+        checks.append(
+            QualityCheck(
+                name="Ngày kết thúc nghỉ phép",
+                passed=not has_duration_and_start or "[Ngày kết thúc]" not in leave_line,
+                severity="medium",
+                message=(
+                    "Ngày kết thúc nghỉ phép đã được điền hoặc chưa đủ dữ kiện để suy ra."
+                    if not has_duration_and_start or "[Ngày kết thúc]" not in leave_line
+                    else "Có ngày bắt đầu và số ngày nghỉ nhưng ngày kết thúc vẫn là placeholder."
+                ),
             )
         )
 
@@ -199,6 +264,14 @@ def _human_review_check(draft: str) -> QualityCheck:
         severity="medium",
         message="Bản nháp cần nhắc người dùng rà soát trước khi sử dụng.",
     )
+
+
+def _find_line(text: str, fragment: str) -> str:
+    fragment_lower = fragment.lower()
+    for line in text.splitlines():
+        if fragment_lower in line.lower():
+            return line
+    return ""
 
 def _required_fragments(doc_type: str) -> list[str]:
     catalog_sections = required_sections(doc_type)
